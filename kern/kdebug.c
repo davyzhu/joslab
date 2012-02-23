@@ -180,7 +180,19 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	//	which one.
 	// Your code here.
 
-	
+    /* 
+     * eip stored in stack is address after call, so addr-1 to get 
+     * address of call
+     */
+
+    addr--; 
+	stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
+    if(lline==rline) 
+      info->eip_line = stabs[lline].n_desc;
+    else {
+      cprintf("lline %d %d, rline %d %d\n", lline, stabs[lline].n_desc, rline,
+               stabs[rline].n_desc);
+    }
 	// Search backwards from the line number for the relevant filename
 	// stab.
 	// We can't just use the "lfile" stab because inlined functions
