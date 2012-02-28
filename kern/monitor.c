@@ -25,6 +25,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+    { "bt", "Backtrace", mon_backtrace},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -60,7 +61,51 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+
+  // Your code here.
+  // bug: after enter kernel->init->sh type bt
+  // print wrong info at mem_init
+  uint32_t ebp, last_ebp, eip, arg[5];
+  char eip_fn_name_t[100];
+  int eip_offset;
+  struct Eipdebuginfo eipdi;
+
+  ebp = (uint32_t)read_ebp();
+  eip = (uint32_t)read_eip();
+       /* 
+        *          dMem     ^             iMem
+        *      +-----------+|            +----------+
+        *      |   ret     ++ frame N    |          |
+        * +--->|           |             |          |
+        * |    +-----------+  frame N+1  |          |
+        * +----+   ret     <+   |          |
+        *      |   ebp     +)----------->|          |
+        *      |           ||  eip       |          |
+        *      |           ||            |          |
+        * ---->|           ||            |          |
+        *  esp +-----------+|            +----------+
+        *                  -+
+        */
+ do {
+    int i;
+    for(i=0;i<5;i++) {
+      arg[i] = *((uint32_t *)ebp+2+i);
+    }
+    cprintf("ebp %x eip %x args %08x %08x %08x %08x %08x\n", ebp, eip,
+            arg[0], arg[1], arg[2], arg[3], arg[4]);
+
+    debuginfo_eip(eip, &eipdi);
+    strncpy(eip_fn_name_t, eipdi.eip_fn_name, eipdi.eip_fn_namelen);
+    eip_fn_name_t[eipdi.eip_fn_namelen]='\0';
+    cprintf("        %s:%d: %s+%x\n", eipdi.eip_file, eipdi.eip_line,
+            eip_fn_name_t, (eip-eipdi.eip_fn_addr));
+
+    eip = *((uint32_t *)ebp+1);
+    last_ebp = ebp;
+    ebp = *((uint32_t *)ebp);
+
+  } while (last_ebp);
+
 	return 0;
 }
 

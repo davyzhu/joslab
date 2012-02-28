@@ -57,6 +57,7 @@ bootmain(void)
 
 	// call the entry point from the ELF header
 	// note: does not return!
+    // last instruction bootloader execute
 	((void (*)(void)) (ELFHDR->e_entry))();
 
 bad:

@@ -187,6 +187,7 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	} else {
 		// Couldn't find function stab!  Maybe we're in an assembly
 		// file.  Search the whole file for the line number.
+      cprintf("couldn't find file, addr %x\n", addr);
 		info->eip_fn_addr = addr;
 		lline = lfile;
 		rline = rfile;
@@ -205,7 +206,20 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	//	which one.
 	// Your code here.
 
-	
+    /* 
+     * eip stored in stack is address after call, so addr-1 to get 
+     * address of call
+     */
+
+    addr--; 
+	stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
+    if(lline<=rline) 
+      info->eip_line = stabs[lline].n_desc;
+    else {
+      cprintf("lfile %d, rfile %d, lfun %d, rfun %d, lline %d %d, rline %d %d\n", 
+              lfile, rfile, lfun, rfun,
+              lline, stabs[lline].n_desc, rline,stabs[rline].n_desc);
+    }
 	// Search backwards from the line number for the relevant filename
 	// stab.
 	// We can't just use the "lfile" stab because inlined functions
