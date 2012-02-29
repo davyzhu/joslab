@@ -138,7 +138,7 @@ int mon_perm(int argc, char **argv, struct Trapframe *tf) {
 //        Dump content from virtual address 0xf0003000 to 0xf0005000     
 //        $ dump p 0x3000 0x5000
 //        Dump content from physical address 0x3000 to 0x5000    
-
+// Limitation: dump can only see physical address in kernel space
 int mon_dump(int argc, char **argv, struct Trapframe *tf) {
   
   uint32_t va_beg=0, va_end=0, va=0;
@@ -170,11 +170,16 @@ int mon_dump(int argc, char **argv, struct Trapframe *tf) {
     return 1;
   }
   
-  pgdir = (pde_t *) KADDR(rcr3());
-  va = va_beg;
-  pgtab = pgdir_walk(pgdir, (void*)va, 0);
-  if(pgtab==0) cprintf("Page not found.\n");
-  pa_beg = PTE_ADDR(*pgtab) | (va_beg & 0xFFF);  
+  if (v == 1) {
+    pgdir = (pde_t *) KADDR(rcr3());
+    va = va_beg;
+    pgtab = pgdir_walk(pgdir, (void*)va, 0);
+    if(pgtab==0) cprintf("Page not found.\n");
+    pa_beg = PTE_ADDR(*pgtab) | (va_beg & 0xFFF);  
+  } else {
+    va_beg = (uint32_t)KADDR(pa_beg);
+  }
+
   cprintf("v)0x%x p)0x%x: 0x%x\n", va_beg, pa_beg, *(uint32_t*)va_beg);
 
   return 0;
