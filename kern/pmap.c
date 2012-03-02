@@ -381,6 +381,7 @@ page_alloc(int alloc_flags)
   
   if (alloc_flags & ALLOC_ZERO)
     memset(page2kva(pp), 0, PGSIZE);
+  //cprintf("page_alloc: pa 0x%x\n", page2pa(pp));
 	return pp;
 }
 
@@ -439,12 +440,14 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
   struct Page * pp;
 
   pde = &pgdir[PDX(va)]; // va->pgdir
+
   if(*pde & PTE_P) { //*pde is pa of page table
     //page table page exist
     //(PTE_ADDR(*pde)) is Page Number
     pgtab = (KADDR(PTE_ADDR(*pde)));
   } else {
     //page table page not exist
+    // shall I zero the page?
     if(!create || 
        !(pp = page_alloc(ALLOC_ZERO)) ||
          !(pgtab = (pte_t*)page2kva(pp))) 
@@ -453,6 +456,10 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
     *pde = PADDR(pgtab) | PTE_P | PTE_W | PTE_U;
   }
 
+  /* 
+   * if ((uint32_t)va < ULIM)
+   *   cprintf("pde 0x%x 0x%x\t pte 0x%x 0x%x\n", (uint32_t)pde, *pde);
+   */
 	return &pgtab[PTX(va)];
 }
 

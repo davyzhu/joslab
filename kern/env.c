@@ -287,6 +287,7 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
   pte_t * pte;
+  struct Page * pg;
   uint32_t va_beg = ROUNDDOWN((uint32_t)va, PGSIZE);
   uint32_t va_end = ROUNDUP((uint32_t)va+len, PGSIZE);
   assert((uint32_t)va < ULIM);
@@ -294,8 +295,9 @@ region_alloc(struct Env *e, void *va, size_t len)
   uint32_t i = va_beg;
   while (i < va_end) {
     pte = pgdir_walk(e->env_pgdir,(void*)i, 1);
-    if(*pte==0) panic("pte is null");
-    *pte |= (PTE_U | PTE_W | PTE_P);
+    pg = page_alloc(0);
+    //if(*pte==0) panic("pte is null");
+    *pte |= (PTE_ADDR(page2pa(pg)) | PTE_U | PTE_W | PTE_P);
     i += PGSIZE;
   }
   
