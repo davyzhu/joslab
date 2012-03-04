@@ -129,6 +129,7 @@ include user/Makefrag
 
 QEMUEXTRA=-d int
 QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT) -D qemu.log
+#QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial file:jos.out -no-reboot
 IMAGES = $(OBJDIR)/kern/kernel.img
 QEMUOPTS += $(QEMUEXTRA)
 # QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio $(QEMUEXTRA)

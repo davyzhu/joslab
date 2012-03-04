@@ -67,9 +67,11 @@ trap_init(void)
 
 	// LAB 3: Your code here.
   int i;
-  for(i=0; i<20; i++) {
+  for(i=0; i<256; i++) {
     SETGATE(idt[i], 0, GD_KT, handlers[i], 0);
   }
+  SETGATE(idt[3], 1, GD_KT, handlers[3], 3); //breakpoint
+  SETGATE(idt[0x30], 1, GD_KT, handlers[0x30], 3); //syscall
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -147,7 +149,10 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
+  if (tf->tf_trapno == 0xe)
+    page_fault_handler(tf);
+  else if (tf->tf_trapno == 0x3)
+    monitor(tf);
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)

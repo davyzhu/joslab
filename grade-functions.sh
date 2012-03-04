@@ -38,8 +38,10 @@ run () {
 		qemuextra="-S $qemugdb"
 	fi
 
-	qemucommand="$qemu -nographic $qemuopts -serial file:jos.out -monitor null -no-reboot $qemuextra"
-	if $verbose; then
+	# qemucommand="$qemu -nographic $qemuopts -serial file:jos.out -monitor null -no-reboot $qemuextra"
+  qemucommand="$qemu -nographic $qemuopts -serial file:jos.out -no-reboot"
+	echo $qemucommand
+  if $verbose; then
 		echo $qemucommand 1>&2
 	fi
 
@@ -49,7 +51,6 @@ run () {
 		exec $qemucommand
 	) >$out 2>$err &
 	PID=$!
-
 	# Wait for QEMU to start
 	sleep 1
 
@@ -64,7 +65,9 @@ run () {
 			echo "br *0x$brkaddr"
 			echo c
 		) > jos.in
-		gdb -batch -nx -x jos.in > /dev/null 2>&1
+    
+    # comment this to save check time
+		# gdb -batch -nx -x jos.in > /dev/null 2>&1
 
 		# Make sure QEMU is dead.  On OS X, exiting gdb
 		# doesn't always exit QEMU.
@@ -161,7 +164,8 @@ runtest () {
 	# time to load.
 	if [ ! -s jos.out ]
 	then
-		sleep 4
+		# sleep 4
+      sleep 1
 	fi
 
 	if [ ! -s jos.out ]
