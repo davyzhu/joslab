@@ -1,0 +1,10 @@
+2011 fall, MIT 6.828 Operating system
+Environment: Ubuntu, Emacs, gcc/gdb, qemu
+
+sync with github:
+$ git push -u github lab2
+
+Pass all lab 1 Ex
+Pass all lab 2 Ex
+add some monitor functions in lab 2 challenge
+Pass all lab 3 Ex

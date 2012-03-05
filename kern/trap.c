@@ -30,6 +30,7 @@ struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
 };
 
+extern uint32_t handlers[];
 
 static const char *trapname(int trapno)
 {
@@ -72,7 +73,12 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
-
+  int i;
+  for(i=0; i<256; i++) {
+    SETGATE(idt[i], 0, GD_KT, handlers[i], 0);
+  }
+  SETGATE(idt[T_BRKPT], 1, GD_KT, handlers[T_BRKPT], 3); //breakpoint
+  SETGATE(idt[T_SYSCALL], 1, GD_KT, handlers[T_SYSCALL], 3); //syscall
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -173,6 +179,32 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+  switch(tf->tf_trapno) {
+  case T_PGFLT:
+    page_fault_handler(tf);
+    break;
+  case T_BRKPT:
+    monitor(tf);
+    break;
+  case T_SYSCALL:
+    tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax,
+                                  tf->tf_regs.reg_edx,
+                                  tf->tf_regs.reg_ecx,
+                                  tf->tf_regs.reg_ebx,
+                                  tf->tf_regs.reg_edi,
+                                  tf->tf_regs.reg_esi);
+    break;
+  default:
+    // Unexpected trap: The user process or the kernel has a bug.
+    print_trapframe(tf);
+    if (tf->tf_cs == GD_KT)
+      panic("unhandled trap in kernel");
+    else {
+      env_destroy(curenv);
+      return;
+    }
+    break;
+  }
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -262,11 +294,12 @@ page_fault_handler(struct Trapframe *tf)
 	fault_va = rcr2();
 
 	// Handle kernel-mode page faults.
-
+  
 	// LAB 3: Your code here.
-
-	// We've already handled kernel-mode exceptions, so if we get here,
-	// the page fault happened in user mode.
+  if ((tf->tf_cs & 0x1) == 0) {
+    print_trapframe(tf);
+    panic("Kernel page fault");
+  }
 
 	// Call the environment's page fault upcall, if one exists.  Set up a
 	// page fault stack frame on the user exception stack (below
@@ -302,6 +335,11 @@ page_fault_handler(struct Trapframe *tf)
 	cprintf("[%08x] user fault va %08x ip %08x\n",
 		curenv->env_id, fault_va, tf->tf_eip);
 	print_trapframe(tf);
+
+	// We've already handled kernel-mode exceptions, so if we get here,
+	// the page fault happened in user mode.
+  user_mem_assert(curenv, (void*)fault_va, 1, PTE_P | PTE_U);
+
 	env_destroy(curenv);
 }
 
