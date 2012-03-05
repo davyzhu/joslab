@@ -156,6 +156,7 @@ mem_init(void)
 
 	// Permissions: kernel R, user R
 	kern_pgdir[PDX(UVPT)] = PADDR(kern_pgdir) | PTE_U | PTE_P;
+  cprintf("pa(kern_pgdir) %x\n", PADDR(kern_pgdir));
 	//////////////////////////////////////////////////////////////////////
 	// Allocate an array of npages 'struct Page's and store it in 'pages'.
 	// The kernel uses this array to keep track of physical pages: for
@@ -195,11 +196,12 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+	//kern_pgdir[PDX(UPAGES)] = PADDR(pages) | PTE_U | PTE_P;
   boot_map_region(kern_pgdir, 
                   UPAGES, 
                   ROUNDUP((sizeof(struct Page) * npages), PGSIZE),
                   PADDR(pages), 
-                  (PTE_W | PTE_P));
+                  (PTE_U | PTE_P));
   
   
   /* 
@@ -219,12 +221,13 @@ mem_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
+	//kern_pgdir[PDX(UENVS)] = PADDR(envs) | PTE_U | PTE_P;
   boot_map_region(kern_pgdir, 
                   UENVS, 
                   ROUNDUP((sizeof(struct Env) * NENV), PGSIZE),
                   PADDR(envs), 
-                  (PTE_W | PTE_P));
-
+                  (PTE_U | PTE_P));
+  cprintf("UENVS 0x%x\n", UENVS);
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
 	// stack.  The kernel stack grows down from virtual address KSTACKTOP.
@@ -255,7 +258,7 @@ mem_init(void)
                   ROUNDUP((0xFFFFFFFF-KERNBASE), PGSIZE),
                   0, 
                   (PTE_W | PTE_P));
-  
+  cprintf("KERNBASE 0x%x\n", KERNBASE);  
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -633,7 +636,21 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
-
+  pte_t * pte;
+  uint32_t va_beg, va_end, a, n, i=0;
+  va_beg = ROUNDDOWN((uint32_t)va, PGSIZE);
+  va_end = ROUNDUP((uint32_t)va+len-1, PGSIZE);
+  n = (va_end - va_beg) / PGSIZE;
+  do {
+    a = va_beg + i*PGSIZE;
+    pte = pgdir_walk(env->env_pgdir, (void*)a, 0);
+    if ((a + PGSIZE > ULIM ) || 
+        (*pte & perm) != perm) {
+      user_mem_check_addr = a;
+      return -E_FAULT;
+    }
+  } while (++i < n);
+  
 	return 0;
 }
 
@@ -650,7 +667,7 @@ user_mem_assert(struct Env *env, const void *va, size_t len, int perm)
 	if (user_mem_check(env, va, len, perm | PTE_U) < 0) {
 		cprintf("[%08x] user_mem_check assertion failure for "
 			"va %08x\n", env->env_id, user_mem_check_addr);
-		env_destroy(env);	// may not return
+		//env_destroy(env);	// may not return
 	}
 }
 

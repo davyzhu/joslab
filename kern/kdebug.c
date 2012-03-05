@@ -212,7 +212,7 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
      */
 
     addr--; 
-	stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
+    stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
     if(lline<=rline) 
       info->eip_line = stabs[lline].n_desc;
     else {

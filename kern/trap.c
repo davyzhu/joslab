@@ -157,8 +157,17 @@ trap_dispatch(struct Trapframe *tf)
     monitor(tf);
     break;
   case T_SYSCALL:
-    if (tf->tf_regs.reg_eax == SYS_cputs)
-      cprintf("%s", (char*) tf->tf_regs.reg_edx);
+    switch (tf->tf_regs.reg_eax) {
+    case SYS_cputs:
+      cprintf("%s", (char*) tf->tf_regs.reg_edx); 
+      break;
+    case SYS_getenvid:
+      // copy it to eax?
+      cprintf("p0 env 0x%x\n", (uint32_t)curenv);
+      cprintf("envid's va 0x%x\n", &(curenv->env_id));
+      tf->tf_regs.reg_eax = (uint32_t)curenv;
+      break;
+    }
     break;
   default:
     // Unexpected trap: The user process or the kernel has a bug.
@@ -169,6 +178,7 @@ trap_dispatch(struct Trapframe *tf)
       env_destroy(curenv);
       return;
     }
+    break;
   }
 }
 
@@ -219,11 +229,15 @@ page_fault_handler(struct Trapframe *tf)
 	fault_va = rcr2();
 
 	// Handle kernel-mode page faults.
-
+  
 	// LAB 3: Your code here.
-
+  if ((tf->tf_cs & 0x1) == 0) {
+    print_trapframe(tf);
+    panic("Kernel page fault");
+  }
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
+  user_mem_assert(curenv, (void*)fault_va, 1, PTE_P | PTE_U);
 
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",

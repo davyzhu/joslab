@@ -13,8 +13,10 @@ libmain(int argc, char **argv)
 {
 	// set thisenv to point at our Env structure in envs[].
 	// LAB 3: Your code here.
-	thisenv = 0;
-
+	thisenv =(struct Env *) sys_getenvid();
+  //cprintf("p1 env 0x%x\n", (uint32_t)thisenv);
+  //cprintf("p2 envid 0x%x\n", thisenv->env_id);
+  //cprintf("p3\n");
 	// save the name of the program so that panic() can use it
 	if (argc > 0)
 		binaryname = argv[0];

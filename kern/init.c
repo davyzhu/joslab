@@ -38,12 +38,15 @@ i386_init(void)
 
 #if defined(TEST)
   // Don't touch -- used by grading script!
-  cprintf("In Test\n");
   ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
   // Touch all you want.
   ENV_CREATE(user_hello, ENV_TYPE_USER);
+  //ENV_CREATE(user_buggyhello, ENV_TYPE_USER);
+  //ENV_CREATE(user_buggyhello2, ENV_TYPE_USER);
+  //ENV_CREATE(user_evilhello, ENV_TYPE_USER);
   //ENV_CREATE(user_testbss, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultread, ENV_TYPE_USER);
   //ENV_CREATE(user_divzero, ENV_TYPE_USER);
   //ENV_CREATE(user_softint, ENV_TYPE_USER);
   //ENV_CREATE(user_badsegment, ENV_TYPE_USER);
