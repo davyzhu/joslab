@@ -230,14 +230,16 @@ page_fault_handler(struct Trapframe *tf)
     print_trapframe(tf);
     panic("Kernel page fault");
   }
-	// We've already handled kernel-mode exceptions, so if we get here,
-	// the page fault happened in user mode.
-  user_mem_assert(curenv, (void*)fault_va, 1, PTE_P | PTE_U);
 
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",
 		curenv->env_id, fault_va, tf->tf_eip);
 	print_trapframe(tf);
+
+	// We've already handled kernel-mode exceptions, so if we get here,
+	// the page fault happened in user mode.
+  user_mem_assert(curenv, (void*)fault_va, 1, PTE_P | PTE_U);
+
 	env_destroy(curenv);
 }
 

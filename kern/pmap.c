@@ -646,7 +646,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
     pte = pgdir_walk(env->env_pgdir, (void*)a, 0);
     if ((a + PGSIZE > ULIM ) || 
         (*pte & perm) != perm) {
-      user_mem_check_addr = a;
+      user_mem_check_addr = (i==0) ? (uint32_t)va : a;
       return -E_FAULT;
     }
   } while (++i < n);
@@ -667,7 +667,7 @@ user_mem_assert(struct Env *env, const void *va, size_t len, int perm)
 	if (user_mem_check(env, va, len, perm | PTE_U) < 0) {
 		cprintf("[%08x] user_mem_check assertion failure for "
 			"va %08x\n", env->env_id, user_mem_check_addr);
-		//env_destroy(env);	// may not return
+		env_destroy(env);	// may not return
 	}
 }
 
