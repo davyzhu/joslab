@@ -157,17 +157,12 @@ trap_dispatch(struct Trapframe *tf)
     monitor(tf);
     break;
   case T_SYSCALL:
-    switch (tf->tf_regs.reg_eax) {
-    case SYS_cputs:
-      cprintf("%s", (char*) tf->tf_regs.reg_edx); 
-      break;
-    case SYS_getenvid:
-      // copy it to eax?
-      cprintf("p0 env 0x%x\n", (uint32_t)curenv);
-      cprintf("envid's va 0x%x\n", &(curenv->env_id));
-      tf->tf_regs.reg_eax = (uint32_t)curenv;
-      break;
-    }
+    tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax,
+                                  tf->tf_regs.reg_edx,
+                                  tf->tf_regs.reg_ecx,
+                                  tf->tf_regs.reg_ebx,
+                                  tf->tf_regs.reg_edi,
+                                  tf->tf_regs.reg_esi);
     break;
   default:
     // Unexpected trap: The user process or the kernel has a bug.
