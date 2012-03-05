@@ -47,11 +47,11 @@ i386_init(void)
   //ENV_CREATE(user_buggyhello2, ENV_TYPE_USER);
   //ENV_CREATE(user_evilhello, ENV_TYPE_USER);
   //ENV_CREATE(user_testbss, ENV_TYPE_USER);
-  ENV_CREATE(user_faultread, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultread, ENV_TYPE_USER);
   //ENV_CREATE(user_divzero, ENV_TYPE_USER);
   //ENV_CREATE(user_softint, ENV_TYPE_USER);
   //ENV_CREATE(user_badsegment, ENV_TYPE_USER);
-  //ENV_CREATE(user_breakpoint, ENV_TYPE_USER);
+  ENV_CREATE(user_breakpoint, ENV_TYPE_USER);
 #endif // TEST*
 
   // We only have one user environment for now, so just run it.

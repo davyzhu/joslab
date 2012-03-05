@@ -242,13 +242,13 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
    */
   do {
     int i;
+    if (0 != debuginfo_eip(eip, &eipdi)) break;
     for(i=0;i<5;i++) {
       arg[i] = *((uint32_t *)ebp+2+i);
     }
     cprintf("ebp %x eip %x args %08x %08x %08x %08x %08x\n", ebp, eip,
             arg[0], arg[1], arg[2], arg[3], arg[4]);
 
-    debuginfo_eip(eip, &eipdi);
     strncpy(eip_fn_name_t, eipdi.eip_fn_name, eipdi.eip_fn_namelen);
     eip_fn_name_t[eipdi.eip_fn_namelen]='\0';
     cprintf("        %s:%d: %s+%x\n", eipdi.eip_file, eipdi.eip_line,

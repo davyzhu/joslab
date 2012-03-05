@@ -125,6 +125,7 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	info->eip_fn_addr = addr;
 	info->eip_fn_narg = 0;
 
+
 	// Find the relevant set of stabs
 	if (addr >= ULIM) {
 		stabs = __STAB_BEGIN__;
@@ -138,10 +139,13 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 		// __STABSTR_END__) in a structure located at virtual address
 		// USTABDATA.
 		const struct UserStabData *usd = (const struct UserStabData *) USTABDATA;
+		//cprintf("kdebug user\n");
+		//cprintf("addr %x\n usd %x ", addr, (uint32_t)usd);
 
 		// Make sure this memory is valid.
 		// Return -1 if it is not.  Hint: Call user_mem_check.
 		// LAB 3: Your code here.
+		if(0 != user_mem_check(curenv, usd, sizeof(struct UserStabData), PTE_U | PTE_P)) return -1;
 
 		stabs = usd->stabs;
 		stab_end = usd->stab_end;
@@ -150,6 +154,12 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 
 		// Make sure the STABS and string table memory is valid.
 		// LAB 3: Your code here.
+		if(0 != user_mem_check(curenv, stabs, stab_end - stabs, PTE_U | PTE_P)) 
+		  return -1;
+		if(0 != user_mem_check(curenv, stabstr, 
+				       (stabstr_end - stabstr), PTE_U | PTE_P)) 
+		  return -1;
+
 	}
 
 	// String table validity checks
