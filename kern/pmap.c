@@ -191,7 +191,7 @@ mem_init(void)
                   UPAGES, 
                   ROUNDUP((sizeof(struct Page) * npages), PGSIZE),
                   PADDR(pages), 
-                  (PTE_W | PTE_P));
+                  (PTE_U | PTE_P));
   
   
   /* 
