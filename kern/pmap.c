@@ -360,17 +360,19 @@ page_init(void)
 	size_t i;
   physaddr_t pa;
 	for (i = 0; i < npages; i++) {
-		if (i==0) {
-      // 1) pages[0]
-      pages[i].pp_ref = 1;
-      pages[i].pp_link = NULL;
-    } else if (i<npages_basemem) {
+    if (i<npages_basemem) {
       // 2) rest of base memory
       //cprintf("case 2 start: %d\n", i);
-      pages[i].pp_ref = 0;
-      pages[i].pp_link = page_free_list;
-      page_free_list = &pages[i];
-    } else if (i<=(EXTPHYSMEM / PGSIZE)) {
+      if (i == 0 || i == (MPENTRY_PADDR / PGSIZE)) {
+        // 1) pages[0] and MPENTRY
+        pages[i].pp_ref = 1;
+        pages[i].pp_link = NULL;
+      } else {
+        pages[i].pp_ref = 0;
+        pages[i].pp_link = page_free_list;
+        page_free_list = &pages[i];
+      }
+    } else if (i<(EXTPHYSMEM / PGSIZE)) {
       // 3) IO hole
       pages[i].pp_ref = 1;
       pages[i].pp_link = NULL;
@@ -765,7 +767,7 @@ check_page_free_list(bool only_low_memory)
 		assert(page2pa(pp) != EXTPHYSMEM);
 		assert(page2pa(pp) < EXTPHYSMEM || (char *) page2kva(pp) >= first_free_page);
 		// (new test for lab 4)
-		assert(page2pa(pp) != MPENTRY_PADDR);
+		assert(page2pa(pp) != MPENTRY_PADDR || cprintf("MPENTRY_PADDR 0x%x\n", MPENTRY_PADDR));
 
 		if (page2pa(pp) < EXTPHYSMEM)
 			++nfree_basemem;
