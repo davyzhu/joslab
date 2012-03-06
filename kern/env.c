@@ -384,7 +384,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
     if (ph->p_type == ELF_PROG_LOAD) {
       if (ph->p_filesz > ph->p_memsz)
         panic("filesz > memsz\n");
-      cprintf("ph: va %x, memsz %x\n", ph->p_va, ph->p_memsz);
+      //cprintf("ph: va %x, memsz %x\n", ph->p_va, ph->p_memsz);
       // allocate va [ph->va, ph->va + ph->p_memsz - 1]
       region_alloc(e, (void*)ph->p_va, ph->p_memsz);
       // copy from elf to va

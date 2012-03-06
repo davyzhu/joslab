@@ -241,11 +241,13 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
-  boot_map_region(kern_pgdir, 
-                  (KSTACKTOP-KSTKSIZE), 
-                  KSTKSIZE,
-                  PADDR(bootstack), 
-                  (PTE_W | PTE_P));
+  /* 
+   * boot_map_region(kern_pgdir, 
+   *                 (KSTACKTOP-KSTKSIZE), 
+   *                 KSTKSIZE,
+   *                 PADDR(bootstack), 
+   *                 (PTE_W | PTE_P));
+   */
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -318,6 +320,24 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+
+    // because percpu_kstacks[0] and bootstack use the same va range,
+    // so comment out bootstack va->pa mapping in mem_init().
+    int i, n; 
+    uint32_t va, pa, lpa, rpa;
+    pte_t * pte;
+    for (i=0; i<NCPU; i++) {
+      va = KSTACKTOP - i * (KSTKSIZE + KSTKGAP) - KSTKSIZE;
+      pa = PADDR(percpu_kstacks[i]);
+      boot_map_region(kern_pgdir, 
+                      va, 
+                      KSTKSIZE,
+                      pa, 
+                      (PTE_W | PTE_P));
+      pte = pgdir_walk(kern_pgdir, (void*)va, 0);
+      //cprintf("pte 0x%x,\t", *pte);
+      //cprintf("va 0x%x, pa 0x%x \n", va, pa);
+    }
 
 }
 
@@ -901,8 +921,10 @@ check_kern_pgdir(void)
 	for (n = 0; n < NCPU; n++) {
 		uint32_t base = KSTACKTOP - (KSTKSIZE + KSTKGAP) * (n + 1);
 		for (i = 0; i < KSTKSIZE; i += PGSIZE)
-			assert(check_va2pa(pgdir, base + KSTKGAP + i)
-				== PADDR(percpu_kstacks[n]) + i);
+          assert((lpa=(check_va2pa(pgdir, base + KSTKGAP + i))
+                  == (rpa=PADDR(percpu_kstacks[n]) + i)) ||
+                 cprintf("n %d, i %d, va 0x%x, lpa 0x%x, rpa 0x%x\n", 
+                         n, i, (base+KSTKGAP+i), lpa, rpa));
 		for (i = 0; i < KSTKGAP; i += PGSIZE)
 			assert(check_va2pa(pgdir, base + i) == ~0);
 	}
