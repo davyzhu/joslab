@@ -41,14 +41,17 @@ sched_yield(void)
       ei = (ei_beg + i) % NENV;
       if (envs[ei].env_type != ENV_TYPE_IDLE &&
           envs[ei].env_status == ENV_RUNNABLE) {
-        cprintf("cpu[%d] pick runnable envs[%d]\n", 
-                cpunum(), ei, envs[ei].env_type, envs[ei].env_status);
+        /* 
+         * cprintf("cpu[%d] pick runnable envs[%d]\n", 
+         *         cpunum(), ei, envs[ei].env_type, envs[ei].env_status);
+         */
         env_run(&envs[ei]);
         break;
       }
 	}
-
-    print_envs();
+    
+    // debug: print how many envs is running
+    //print_envs(0);
 
     // case 2: RUNNING
 	for (i = 0; i < NENV; i++) {
@@ -57,8 +60,10 @@ sched_yield(void)
           envs[ei].env_status == ENV_RUNNING &&
           envs[ei].env_cpunum == cpunum()
           ) {
-        cprintf("cpu[%d] pick running envs[%d]\n", 
-                cpunum(), ei, envs[ei].env_type, envs[ei].env_status);
+        /* 
+         * cprintf("cpu[%d] pick running envs[%d]\n", 
+         *         cpunum(), ei, envs[ei].env_type, envs[ei].env_status);
+         */
         env_run(&envs[ei]);
         break;
       }
@@ -69,13 +74,13 @@ sched_yield(void)
 	// runnable environments other than the idle environments,
 	// drop into the kernel monitor.
 	if (i == NENV) {
-      cprintf("cpu[%d] No more runnable/running environments!\n", cpunum());
+      //cprintf("cpu[%d] No more runnable/running environments!\n", cpunum());
 		//while (1)
 		//	monitor(NULL);
 	}
 
 	// Run this CPU's idle environment when nothing else is runnable.
-    cprintf("cpu[%d] run idle\n", cpunum());
+    //cprintf("cpu[%d] run idle\n", cpunum());
 	idle = &envs[cpunum()];
 	if (!(idle->env_status == ENV_RUNNABLE || idle->env_status == ENV_RUNNING))
 		panic("CPU %d: No idle environment!", cpunum());
