@@ -4,7 +4,7 @@
 /* system call numbers */
 enum {
 	SYS_cputs = 0,
-	SYS_cgetc,
+	SYS_cgetc, 
 	SYS_getenvid,
 	SYS_env_destroy,
 	SYS_page_alloc,

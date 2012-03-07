@@ -195,39 +195,48 @@ trap_dispatch(struct Trapframe *tf)
                                   tf->tf_regs.reg_edi,
                                   tf->tf_regs.reg_esi);
     break;
+  case (IRQ_OFFSET + IRQ_SPURIOUS):
+    cprintf("Spurious interrupt on irq 7\n");
+    print_trapframe(tf);
+    return;
   default:
     // Unexpected trap: The user process or the kernel has a bug.
     print_trapframe(tf);
     if (tf->tf_cs == GD_KT)
-      panic("unhandled trap in kernel");
+      panic("unhandled trap in kernel\n");
     else {
+      panic("unhandled trap in user\n");
       env_destroy(curenv);
       return;
     }
     break;
   }
 
-	// Handle spurious interrupts
-	// The hardware sometimes raises these because of noise on the
-	// IRQ line or other reasons. We don't care.
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
-		cprintf("Spurious interrupt on irq 7\n");
-		print_trapframe(tf);
-		return;
-	}
+  // Handle spurious interrupts
+  // The hardware sometimes raises these because of noise on the
+  // IRQ line or other reasons. We don't care.
+  /* 
+   * if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
+   *   cprintf("Spurious interrupt on irq 7\n");
+   *   print_trapframe(tf);
+   *   return;
+   * }
+   */
 
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
 
-	// Unexpected trap: The user process or the kernel has a bug.
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT)
-		panic("unhandled trap in kernel");
-	else {
-		env_destroy(curenv);
-		return;
-	}
+	/* 
+     * // Unexpected trap: The user process or the kernel has a bug.
+	 * print_trapframe(tf);
+	 * if (tf->tf_cs == GD_KT)
+	 * 	panic("unhandled trap in kernel");
+	 * else {
+	 * 	env_destroy(curenv);
+	 * 	return;
+	 * }
+     */
 }
 
 void

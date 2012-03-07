@@ -572,6 +572,7 @@ env_run(struct Env *e)
     }
   }
   curenv = e;
+  curenv->env_cpunum = cpunum();
   curenv->env_status = ENV_RUNNING;
   curenv->env_runs ++;
   unlock_kernel();
@@ -582,3 +583,12 @@ env_run(struct Env *e)
   
 }
 
+void print_envs() {
+  int i;
+  for (i = 0; i < NENV; i++) {
+    if (envs[i].env_type != ENV_TYPE_IDLE &&
+        envs[i].env_status == ENV_RUNNING)
+      cprintf("envs[%d] is running on cpu[%d]\n", i, envs[i].env_cpunum);
+          
+  }
+}
