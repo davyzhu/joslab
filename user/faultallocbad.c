@@ -1,6 +1,8 @@
 // test user-level fault handler -- alloc pages to fix faults
 // doesn't work because we sys_cputs instead of cprintf (exercise: why?)
 
+// sys_cputs work in kernel mode while cprintf work in user mode?
+
 #include <inc/lib.h>
 
 void

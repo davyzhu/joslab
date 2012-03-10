@@ -43,6 +43,7 @@
 
 #include <inc/types.h>
 
+// 32B
 struct PushRegs {
 	/* registers as pushed by pusha */
 	uint32_t reg_edi;
@@ -55,6 +56,7 @@ struct PushRegs {
 	uint32_t reg_eax;
 } __attribute__((packed));
 
+// 68B
 struct Trapframe {
 	struct PushRegs tf_regs;
 	uint16_t tf_es;
@@ -74,6 +76,7 @@ struct Trapframe {
 	uint16_t tf_padding4;
 } __attribute__((packed));
 
+// 20B+32B=52B
 struct UTrapframe {
 	/* information about the fault */
 	uint32_t utf_fault_va;	/* va for T_PGFLT, 0 otherwise */

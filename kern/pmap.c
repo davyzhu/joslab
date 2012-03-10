@@ -705,7 +705,10 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
   n = (va_end - va_beg) / PGSIZE;
   do {
     a = va_beg + i*PGSIZE;
-    pte = pgdir_walk(env->env_pgdir, (void*)a, 0);
+    if ((pte = pgdir_walk(env->env_pgdir, (void*)a, 0)) == NULL) {
+      user_mem_check_addr = (i==0) ? (uint32_t)va : a;
+      return -E_FAULT;
+    }
     if ((a + PGSIZE > ULIM ) || 
         (*pte & perm) != perm) {
       user_mem_check_addr = (i==0) ? (uint32_t)va : a;

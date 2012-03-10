@@ -1,6 +1,7 @@
 #include <inc/mmu.h>
 #include <inc/x86.h>
 #include <inc/assert.h>
+#include <inc/string.h>
 
 #include <kern/pmap.h>
 #include <kern/trap.h>
@@ -289,6 +290,8 @@ trap(struct Trapframe *tf)
 	// If we made it to this point, then no other environment was
 	// scheduled, so we should return to the current environment
 	// if doing so makes sense.
+    //cprintf("\ntrap eip 0x%x\n", curenv->env_tf.tf_eip);
+    
 	if (curenv && curenv->env_status == ENV_RUNNING)
 		env_run(curenv);
 	else
@@ -301,6 +304,8 @@ page_fault_handler(struct Trapframe *tf)
 {
 	uint32_t fault_va;
 
+    //cprintf("Enter trap:page_fault_handler\n");
+
 	// Read processor's CR2 register to find the faulting address
 	fault_va = rcr2();
 
@@ -311,6 +316,11 @@ page_fault_handler(struct Trapframe *tf)
     print_trapframe(tf);
     panic("Kernel page fault");
   }
+
+	// We've already handled kernel-mode exceptions, so if we get here,
+	// the page fault happened in user mode.
+  //user_mem_assert(curenv, (void*)fault_va, 1, PTE_P | PTE_U);
+
 
 	// Call the environment's page fault upcall, if one exists.  Set up a
 	// page fault stack frame on the user exception stack (below
@@ -341,16 +351,89 @@ page_fault_handler(struct Trapframe *tf)
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
 	// LAB 4: Your code here.
+  
+  // check pgfault handler
+  /* 
+   * void (* pgfault_upcall)();
+   * pgfault_upcall = curenv->env_pgfault_upcall;
+   */
+  if (curenv->env_pgfault_upcall == NULL) {
+    goto fatal;
+  }
 
-	// Destroy the environment that caused the fault.
-	cprintf("[%08x] user fault va %08x ip %08x\n",
-		curenv->env_id, fault_va, tf->tf_eip);
-	print_trapframe(tf);
+  // check User Exception Stack
+  /* 
+   * void *va =(void*)(UXSTACKTOP - PGSIZE);
+   * if (0 != user_mem_check(curenv, va, PGSIZE, PTE_URW)) {
+   *   // can not access Exception Stack, so build it
+   *   struct Page * pg;
+   *   if ((pg = (page_alloc(ALLOC_ZERO))) == NULL) {
+   *     cprintf("Can not allocate memory for exception stack\n");
+   *     goto fatal;
+   *   }
+   *   if (0 != (page_insert(curenv->env_pgdir, pg, va, PTE_URW))) {
+   *     cprintf("Can not insert exception stack to env_pgdir\n");
+   *     goto fatal;
+   *   }
+   * } else {
+   */
+    // can access Exception Stack, check stack overflow
+  if (USTACKTOP < tf->tf_esp && tf->tf_esp < UXSTACKTOP-PGSIZE) {
+    cprintf("Exception Stack overflow\n");
+    goto fatal;
+  }
+ 
+  // copy User trap frame
+  struct UTrapframe utf;
+  utf.utf_fault_va = fault_va;
+  utf.utf_err = tf->tf_err;
+  utf.utf_regs = tf->tf_regs;
+  utf.utf_eip = tf->tf_eip;
+  utf.utf_eflags = tf->tf_eflags;
+  utf.utf_esp = tf->tf_esp;
+  
+  void *src, *dst;
+  src = (void*)&utf;
+  
+  /* 
+   * cprintf("size: regs %d tf %d utf %d", 
+   *         sizeof(struct PushRegs),
+   *         sizeof(struct Trapframe),
+   *         sizeof(struct UTrapframe));
+   */
 
-	// We've already handled kernel-mode exceptions, so if we get here,
-	// the page fault happened in user mode.
-  user_mem_assert(curenv, (void*)fault_va, 1, PTE_P | PTE_U);
+  if (UXSTACKTOP-PGSIZE <= tf->tf_esp &&
+      tf->tf_esp <= UXSTACKTOP-1) {
+    // already in exception statck 
+    // (fixed) must leave a 4B space for return address
+    dst = (void*)(tf->tf_esp - sizeof(struct UTrapframe) - 4);
+    // push a blank word to the top of exception stack (ignore)
+    //*(uint32_t*)(tf->tf_esp) = 0;
+  } else {
+    dst = (void*)(UXSTACKTOP - sizeof(struct UTrapframe));
+  }
 
-	env_destroy(curenv);
+  user_mem_assert(curenv, dst, sizeof(struct UTrapframe), PTE_URW);
+  memmove(dst, src, sizeof(struct UTrapframe));
+
+  // env run pgfault handler in user mode
+  tf->tf_eip = (uint32_t)(curenv->env_pgfault_upcall);
+  tf->tf_esp = (uint32_t) dst;
+  // how to set ebp?
+  //tf.tf_regs.reg_ebp =  
+  env_run(curenv);
+  /* 
+   * if (pgfault_upcall) {
+   *   cprintf("call pgfault_upcall\n");
+   *   (*pgfault_upcall)();
+   *   return; // shall I return???
+   * }
+   */
+ fatal:
+  // Destroy the environment that caused the fault.
+  cprintf("[%08x] user fault va %08x ip %08x\n",
+          curenv->env_id, fault_va, tf->tf_eip);
+  print_trapframe(tf);
+  env_destroy(curenv);
 }
 

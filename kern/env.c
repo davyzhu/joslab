@@ -575,6 +575,8 @@ env_run(struct Env *e)
   curenv->env_cpunum = cpunum();
   curenv->env_status = ENV_RUNNING;
   curenv->env_runs ++;
+  //cprintf("env_run eip 0x%x\n", curenv->env_tf.tf_eip);
+
   unlock_kernel();
   lcr3(PADDR(e->env_pgdir));
   //cprintf("p1\n");

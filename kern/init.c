@@ -62,7 +62,13 @@ i386_init(void)
   // Don't touch -- used by grading script!
   ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
-  ENV_CREATE(user_dumbfork, ENV_TYPE_USER);
+  //ENV_CREATE(user_dumbfork, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultregs, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultalloc, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultallocbad, ENV_TYPE_USER);
+  ENV_CREATE(user_faultnostack, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultbadhandler, ENV_TYPE_USER);
+  
   //for (i = 0; i < 2; i++)
   //	ENV_CREATE(user_yield, ENV_TYPE_USER);
 	// Touch all you want.

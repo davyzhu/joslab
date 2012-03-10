@@ -205,6 +205,9 @@ sys_page_alloc(envid_t envid, void *va, int perm)
     page_free(pg);
     return -E_NO_MEM;
   }
+
+  //cprintf("sys_page_alloc eip 0x%x\n", env->env_tf.tf_eip);
+
   return 0;
 }
 
@@ -397,6 +400,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     break;
   case SYS_yield:
     sys_yield();
+    break;
   case SYS_env_set_pgfault_upcall:
     return sys_env_set_pgfault_upcall(a1, (void*)a2);
     break;
