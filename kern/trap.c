@@ -78,8 +78,14 @@ trap_init(void)
   for(i=0; i<256; i++) {
     SETGATE(idt[i], 0, GD_KT, handlers[i], 0);
   }
+
+  // istrap=1 means interrupt can re-enter an interrupt(not masked)
+  // dpl=3 means software can use "int 0x." instruction to invoke interrupt
   SETGATE(idt[T_BRKPT], 1, GD_KT, handlers[T_BRKPT], 3); //breakpoint
   SETGATE(idt[T_SYSCALL], 1, GD_KT, handlers[T_SYSCALL], 3); //syscall
+
+  // shall I change gate for INTR?
+
   // Per-CPU setup 
   trap_init_percpu();
 }
