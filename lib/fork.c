@@ -42,14 +42,16 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
     void* va_beg = (void*)ROUNDDOWN((uint32_t)addr, PGSIZE);
-    cprintf("pgfault: envid %x addr 0x%x va_beg 0x%x\n", 
-            thisenv->env_id, (uint32_t)addr, va_beg);
+    /* 
+     * cprintf("pgfault: envid %x addr 0x%x va_beg 0x%x\n", 
+     *         thisenv->env_id, (uint32_t)addr, va_beg);
+     */
 
     if ((r = sys_page_alloc(0, (void*)PFTEMP, PTE_URW)) < 0)
       panic("sys_page_alloc: %e", r);
-    cprintf("pgfault: p0\n");
+
 	memmove((void*)PFTEMP, va_beg, PGSIZE);
-    //cprintf("pgfault: p1\n");
+
 	if ((r = sys_page_map(0, (void*)PFTEMP, 0, va_beg, PTE_URW)) < 0)
       panic("sys_page_map: %e", r);
 
@@ -156,7 +158,7 @@ fork(void)
   // copy address space 
   int i,j,pn;
   i=j=pn=0;
-  cprintf("begin of duppage\n");
+  //cprintf("begin of duppage\n");
   
   for (i = 0; i < PDX(UTOP); i++) {
     if(vpd[i] & PTE_P) {
@@ -168,7 +170,7 @@ fork(void)
     }
   }
   
-  cprintf("end of duppage\n");
+  //cprintf("end of duppage\n");
   
   // copy page fault handler setup to the child.
   if ((r = sys_env_set_pgfault_upcall(envid, thisenv->env_pgfault_upcall)) < 0)

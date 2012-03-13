@@ -458,7 +458,7 @@ void
 page_free(struct Page *pp)
 {
 	// Fill this function in
-  cprintf("page_free: pa 0x%x\n", page2pa(pp));
+  //cprintf("page_free: pa 0x%x\n", page2pa(pp));
   assert(pp->pp_ref==0);
   pp->pp_link = page_free_list;
   page_free_list = pp;
@@ -594,7 +594,7 @@ page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm)
 	// Fill this function in
   pte_t * pte;
   pte = pgdir_walk(pgdir, va, 1);
-  cprintf("page_insert pa 0x%x, va 0x%x\n", page2pa(pp), (uint32_t)va);
+  //cprintf("page_insert pa 0x%x, va 0x%x\n", page2pa(pp), (uint32_t)va);
   if (pte) {
     if (*pte&PTE_P) {
       // this case means just change permission

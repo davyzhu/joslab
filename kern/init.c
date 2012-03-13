@@ -62,6 +62,7 @@ i386_init(void)
   // Don't touch -- used by grading script!
   ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
+  //ENV_CREATE(user_faultread, ENV_TYPE_USER);
   //ENV_CREATE(user_dumbfork, ENV_TYPE_USER);
   ENV_CREATE(user_cowfork, ENV_TYPE_USER);
   //ENV_CREATE(user_forktree, ENV_TYPE_USER);

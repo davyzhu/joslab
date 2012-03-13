@@ -9,21 +9,17 @@ envid_t dumbfork(void);
 void
 umain(int argc, char **argv)
 {
-	/* 
-     * envid_t who;
-	 * int i;
-     */
+	envid_t who;
+	int i;
 
 	// fork a child process
-	/* who = dumbfork(); */
+	who = dumbfork();
     dumbfork();
 	// print a message and yield to the other a few times
-	/* 
-     * for (i = 0; i < (who ? 10 : 20); i++) {
-	 * 	cprintf("%d: I am the %s!\n", i, who ? "parent" : "child");
-	 * 	sys_yield();
-	 * }
-     */
+	for (i = 0; i < (who ? 10 : 20); i++) {
+		cprintf("%d: I am the %s!\n", i, who ? "parent" : "child");
+		sys_yield();
+	}
 }
 
 void
