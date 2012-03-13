@@ -80,8 +80,8 @@ trap_init(void)
   }
   SETGATE(idt[T_BRKPT], 1, GD_KT, handlers[T_BRKPT], 3); //breakpoint
   SETGATE(idt[T_SYSCALL], 1, GD_KT, handlers[T_SYSCALL], 3); //syscall
-	// Per-CPU setup 
-	trap_init_percpu();
+  // Per-CPU setup 
+  trap_init_percpu();
 }
 
 // Initialize and load the per-CPU TSS and IDT
@@ -198,7 +198,10 @@ trap_dispatch(struct Trapframe *tf)
     break;
   case (IRQ_OFFSET + IRQ_TIMER):
     cprintf("irq 0\n");
-    print_trapframe(tf);
+    lapic_eoi();
+    sched_yield();
+
+    //print_trapframe(tf);
     return;
   case (IRQ_OFFSET + IRQ_KBD):
     cprintf("irq 1\n");
