@@ -81,8 +81,8 @@ trap_init(void)
 
   // istrap=1 means interrupt can re-enter an interrupt(not masked)
   // dpl=3 means software can use "int 0x." instruction to invoke interrupt
-  SETGATE(idt[T_BRKPT], 1, GD_KT, handlers[T_BRKPT], 3); //breakpoint
-  SETGATE(idt[T_SYSCALL], 1, GD_KT, handlers[T_SYSCALL], 3); //syscall
+  SETGATE(idt[T_BRKPT], 0, GD_KT, handlers[T_BRKPT], 3); //breakpoint
+  SETGATE(idt[T_SYSCALL], 0, GD_KT, handlers[T_SYSCALL], 3); //syscall
 
   // shall I change gate for INTR?
 
@@ -203,7 +203,7 @@ trap_dispatch(struct Trapframe *tf)
                                   tf->tf_regs.reg_esi);
     break;
   case (IRQ_OFFSET + IRQ_TIMER):
-    cprintf("irq 0\n");
+    //cprintf("irq 0\n");
     lapic_eoi();
     sched_yield();
 

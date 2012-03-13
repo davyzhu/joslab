@@ -51,7 +51,7 @@ run () {
 	) >$out 2>$err &
 	PID=$!
 	# Wait for QEMU to start
-	sleep 1
+	sleep 2
 
 	if [ "$brkfn" ]; then
 		# Find the address of the kernel $brkfn function,
