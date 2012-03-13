@@ -32,7 +32,7 @@
 .text
 .globl _pgfault_upcall
 _pgfault_upcall:
-	// Call the C page fault handler. (on exception stack with UTrapframe)
+	// Call the C page fault handler. (user space, on exception stack with UTrapframe)
 	pushl %esp			// function argument: pointer to UTF
 	movl _pgfault_handler, %eax
 	call *%eax
@@ -80,7 +80,7 @@ _pgfault_upcall:
 	// can no longer modify any general-purpose registers.
 	// LAB 4: Your code here.
     movl %ebx, %esp //back to exception stack
-    subl $4, 48(%esp) //utf_esp - 4 for return
+    subl $4, 48(%esp) //utf_esp-4 for return
     popl %eax //pop utf_fault_va(discard)
     popl %eax //pop utf_err(discard)
     popal //pop utf_regs(important)

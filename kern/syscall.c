@@ -97,7 +97,7 @@ sys_exofork(void)
   env_child->env_tf.tf_regs.reg_eax = 0; //? tweaked to return 0
   env_child->env_status = ENV_NOT_RUNNABLE; //
   
-  cprintf("!!env_id %x\n", env_child->env_id);
+  //cprintf("!!env_id %x\n", env_child->env_id);
   return env_child->env_id;
   //panic("sys_exofork not implemented");
 }
@@ -120,13 +120,13 @@ sys_env_set_status(envid_t envid, int status)
 
 	// LAB 4: Your code here.
   struct Env * env;
-  cprintf("Enter set_status\n");
+  cprintf("Enter set_status \n");
   if (status != ENV_RUNNABLE &&
       status != ENV_NOT_RUNNABLE)
     return -E_INVAL;
   if (envid2env(envid, &env, 1) == 0) {
     env->env_status = status;
-    cprintf("env[%d] set status to %d\n", env->env_id, env->env_status);
+    cprintf("env[%x] set status to %x\n", env->env_id, env->env_status);
     return 0;
   } else {
     return -E_BAD_ENV;
@@ -151,7 +151,10 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
   
   if ((r = envid2env(envid, &env, 1)) != 0)
     return -E_BAD_ENV;  
-
+  
+  if(func==NULL)
+    panic("pgfault_upcall is NULL\n");
+  
   env->env_pgfault_upcall = func;
   return 0;
 }
@@ -205,7 +208,10 @@ sys_page_alloc(envid_t envid, void *va, int perm)
     page_free(pg);
     return -E_NO_MEM;
   }
-
+  
+  cprintf("sys_page_alloc: dst %x pa 0x%x ref %d\n", 
+          env->env_id, page2pa(pg), pg->pp_ref);
+  
   //cprintf("sys_page_alloc eip 0x%x\n", env->env_tf.tf_eip);
 
   return 0;
@@ -249,23 +255,38 @@ sys_page_map(envid_t srcenvid, void *srcva,
     return -E_BAD_ENV;  
   
   if((uint32_t)srcva >= UTOP || (uint32_t)srcva%PGSIZE!=0 ||
-     (uint32_t)dstva >= UTOP || (uint32_t)dstva%PGSIZE!=0)
+     (uint32_t)dstva >= UTOP || (uint32_t)dstva%PGSIZE!=0) {
+    cprintf("sys_page_map: E_INVAl case 1, srcva 0x%x dstva 0x%x\n",
+            (uint32_t)srcva, (uint32_t)dstva);
     return -E_INVAL;
-  
+  }
+
   if ((perm & PTE_U) == 0 ||
       (perm & PTE_P) == 0 ||
-      (perm & ~PTE_SYSCALL) != 0)
+      (perm & ~PTE_SYSCALL) != 0) {
+    cprintf("sys_page_map: E_INVAl case 2\n");
     return -E_INVAL;
-  
-  if((pg = page_lookup(srcenv->env_pgdir, srcva, &srcpte)) == NULL)
+  }
+
+  if((pg = page_lookup(srcenv->env_pgdir, srcva, &srcpte)) == NULL) {
+    cprintf("sys_page_map: E_INVAl case 3\n");
     return -E_INVAL;
-  
-  if((perm & PTE_W) != 0 && (*srcpte & PTE_W) == 0)
+  }
+
+  if((perm & PTE_W) != 0 && (*srcpte & PTE_W) == 0) {
+    cprintf("sys_page_map: E_INVAl case 4\n");
     return -E_INVAL;
+  }
+
+  cprintf("before sys_page_map: src %x dst %x pa 0x%x ref %d\n", 
+          srcenv->env_id, dstenv->env_id, page2pa(pg), pg->pp_ref);
 
   if ((r = page_insert(dstenv->env_pgdir, pg, dstva, perm)) != 0) {
     return -E_NO_MEM;
   }
+
+  cprintf("after sys_page_map: src %x dst %x pa 0x%x ref %d\n\n", 
+          srcenv->env_id, dstenv->env_id, page2pa(pg), pg->pp_ref);
   return 0;
   
 }

@@ -158,7 +158,7 @@ mem_init(void)
 
 	// Permissions: kernel R, user R
 	kern_pgdir[PDX(UVPT)] = PADDR(kern_pgdir) | PTE_U | PTE_P;
-  cprintf("pa(kern_pgdir) %x\n", PADDR(kern_pgdir));
+    cprintf("pa(kern_pgdir) %x\n", PADDR(kern_pgdir));
 	//////////////////////////////////////////////////////////////////////
 	// Allocate an array of npages 'struct Page's and store it in 'pages'.
 	// The kernel uses this array to keep track of physical pages: for
@@ -458,6 +458,7 @@ void
 page_free(struct Page *pp)
 {
 	// Fill this function in
+  cprintf("page_free: pa 0x%x\n", page2pa(pp));
   assert(pp->pp_ref==0);
   pp->pp_link = page_free_list;
   page_free_list = pp;
@@ -593,9 +594,17 @@ page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm)
 	// Fill this function in
   pte_t * pte;
   pte = pgdir_walk(pgdir, va, 1);
+  cprintf("page_insert pa 0x%x, va 0x%x\n", page2pa(pp), (uint32_t)va);
   if (pte) {
     if (*pte&PTE_P) {
+      // this case means just change permission
       if (PTE_ADDR(*pte)==page2pa(pp)) {
+        // fix PTE_COW and PTE_W bug (mutual exclusive)
+        if (perm & PTE_COW) {
+          *pte &= ~PTE_W;
+        } else if (perm & PTE_W) {
+          *pte &= ~PTE_COW;
+        }
         *pte |= perm;
         //pp->pp_ref++; //? and shall I change perm?
         return 0;

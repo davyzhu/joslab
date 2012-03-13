@@ -63,10 +63,12 @@ i386_init(void)
   ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
   //ENV_CREATE(user_dumbfork, ENV_TYPE_USER);
+  ENV_CREATE(user_cowfork, ENV_TYPE_USER);
+  //ENV_CREATE(user_forktree, ENV_TYPE_USER);
   //ENV_CREATE(user_faultregs, ENV_TYPE_USER);
   //ENV_CREATE(user_faultalloc, ENV_TYPE_USER);
   //ENV_CREATE(user_faultallocbad, ENV_TYPE_USER);
-  ENV_CREATE(user_faultnostack, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultnostack, ENV_TYPE_USER);
   //ENV_CREATE(user_faultbadhandler, ENV_TYPE_USER);
   
   //for (i = 0; i < 2; i++)

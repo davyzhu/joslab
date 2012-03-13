@@ -309,6 +309,8 @@ region_alloc(struct Env *e, void *va, size_t len)
   while (i < va_end) {
     pte = pgdir_walk(e->env_pgdir,(void*)i, 1);
     pg = page_alloc(0);
+    // pp_ref bug here
+    
     //if(*pte==0) panic("pte is null");
     *pte |= (PTE_ADDR(page2pa(pg)) | PTE_U | PTE_W | PTE_P);
     i += PGSIZE;
@@ -575,13 +577,14 @@ env_run(struct Env *e)
   curenv->env_cpunum = cpunum();
   curenv->env_status = ENV_RUNNING;
   curenv->env_runs ++;
+  //cprintf("env_run env_id %x\n", curenv->env_id);
   //cprintf("env_run eip 0x%x\n", curenv->env_tf.tf_eip);
 
   unlock_kernel();
   lcr3(PADDR(e->env_pgdir));
-  //cprintf("p1\n");
+  //cprintf("env_run p1\n");
   env_pop_tf(&(e->env_tf));
-  //cprintf("p2\n");
+  //cprintf("env_run p2\n");
   
 }
 

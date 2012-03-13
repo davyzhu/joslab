@@ -353,31 +353,11 @@ page_fault_handler(struct Trapframe *tf)
 	// LAB 4: Your code here.
   
   // check pgfault handler
-  /* 
-   * void (* pgfault_upcall)();
-   * pgfault_upcall = curenv->env_pgfault_upcall;
-   */
   if (curenv->env_pgfault_upcall == NULL) {
     goto fatal;
   }
 
-  // check User Exception Stack
-  /* 
-   * void *va =(void*)(UXSTACKTOP - PGSIZE);
-   * if (0 != user_mem_check(curenv, va, PGSIZE, PTE_URW)) {
-   *   // can not access Exception Stack, so build it
-   *   struct Page * pg;
-   *   if ((pg = (page_alloc(ALLOC_ZERO))) == NULL) {
-   *     cprintf("Can not allocate memory for exception stack\n");
-   *     goto fatal;
-   *   }
-   *   if (0 != (page_insert(curenv->env_pgdir, pg, va, PTE_URW))) {
-   *     cprintf("Can not insert exception stack to env_pgdir\n");
-   *     goto fatal;
-   *   }
-   * } else {
-   */
-    // can access Exception Stack, check stack overflow
+  // check User Exception Stack Overflow
   if (USTACKTOP < tf->tf_esp && tf->tf_esp < UXSTACKTOP-PGSIZE) {
     cprintf("Exception Stack overflow\n");
     goto fatal;
@@ -395,12 +375,6 @@ page_fault_handler(struct Trapframe *tf)
   void *src, *dst;
   src = (void*)&utf;
   
-  /* 
-   * cprintf("size: regs %d tf %d utf %d", 
-   *         sizeof(struct PushRegs),
-   *         sizeof(struct Trapframe),
-   *         sizeof(struct UTrapframe));
-   */
 
   if (UXSTACKTOP-PGSIZE <= tf->tf_esp &&
       tf->tf_esp <= UXSTACKTOP-1) {
@@ -422,13 +396,7 @@ page_fault_handler(struct Trapframe *tf)
   // how to set ebp?
   //tf.tf_regs.reg_ebp =  
   env_run(curenv);
-  /* 
-   * if (pgfault_upcall) {
-   *   cprintf("call pgfault_upcall\n");
-   *   (*pgfault_upcall)();
-   *   return; // shall I return???
-   * }
-   */
+
  fatal:
   // Destroy the environment that caused the fault.
   cprintf("[%08x] user fault va %08x ip %08x\n",
