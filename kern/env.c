@@ -294,10 +294,11 @@ region_alloc(struct Env *e, void *va, size_t len)
   assert((uint32_t)va+len < ULIM);
   uint32_t i = va_beg;
   while (i < va_end) {
-    pte = pgdir_walk(e->env_pgdir,(void*)i, 1);
+    //pte = pgdir_walk(e->env_pgdir,(void*)i, 1);
     pg = page_alloc(0);
+    page_insert(e->env_pgdir, pg, (void*)i, PTE_U | PTE_W | PTE_P);
     //if(*pte==0) panic("pte is null");
-    *pte |= (PTE_ADDR(page2pa(pg)) | PTE_U | PTE_W | PTE_P);
+    //*pte |= (PTE_ADDR(page2pa(pg)) | PTE_U | PTE_W | PTE_P);
     i += PGSIZE;
   }
   
