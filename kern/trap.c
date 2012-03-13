@@ -196,6 +196,26 @@ trap_dispatch(struct Trapframe *tf)
                                   tf->tf_regs.reg_edi,
                                   tf->tf_regs.reg_esi);
     break;
+  case (IRQ_OFFSET + IRQ_TIMER):
+    cprintf("irq 0\n");
+    print_trapframe(tf);
+    return;
+  case (IRQ_OFFSET + IRQ_KBD):
+    cprintf("irq 1\n");
+    print_trapframe(tf);
+    return;
+  case (IRQ_OFFSET + IRQ_SERIAL):
+    cprintf("irq 4\n");
+    print_trapframe(tf);
+    return;
+  case (IRQ_OFFSET + IRQ_IDE):
+    cprintf("irq 14\n");
+    print_trapframe(tf);
+    return;
+  case (IRQ_OFFSET + IRQ_ERROR):
+    cprintf("irq 19\n");
+    print_trapframe(tf);
+    return;
   case (IRQ_OFFSET + IRQ_SPURIOUS):
     cprintf("Spurious interrupt on irq 7\n");
     print_trapframe(tf);
