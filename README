@@ -1,10 +1,15 @@
 2011 fall, MIT 6.828 Operating system
 
 Status:
-Pass all lab 1 Exercises
-Pass all lab 2 Exercises
-add some monitor functions in lab 2 challenge
-Pass all lab 3 Exercises
+| Lab | Exercise | Challenge         | Days |
+|-----+----------+-------------------+------|
+|   1 | all pass |                   |    2 |
+|   2 | all pass | monitor functions |    5 |
+|   3 | all pass |                   |    5 |
+|   4 | all pass |                   |   10 |
+|   5 |          |                   |      |
+|   6 |          |                   |      |
+|   7 |          |                   |      |
 
 Git workflow:
 $ git add -p
