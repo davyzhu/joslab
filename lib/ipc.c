@@ -22,12 +22,30 @@
 int32_t
 ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
-	// LAB 4: Your code here.
-	panic("ipc_recv not implemented");
-	return 0;
+  // LAB 4: Your code here.
+  int r;
+
+  //cprintf("[%x] enter ipc_recv \n", thisenv->env_id);
+  if (pg)
+    r = sys_ipc_recv(pg);
+  else
+    r = sys_ipc_recv((void*)UTOP);
+
+  //cprintf("[%x] ipc_recv r %d\n", thisenv->env_id, r);
+
+  if (from_env_store)
+    *from_env_store = (r==0) ? thisenv->env_ipc_from : 0;
+
+  if (perm_store)
+    *perm_store = (r==0 && (uint32_t)pg<UTOP) ? thisenv->env_ipc_perm : 0;
+
+  if (r == 0)
+    return thisenv->env_ipc_value; 
+  else
+    return r;
 }
 
-// Send 'val' (and 'pg' with 'perm', if 'pg' is nonnull) to 'toenv'.
+// Send 'val' (and 'pg' with 'perm', if 'pg' is nonnull) to 'to_env'.
 // This function keeps trying until it succeeds.
 // It should panic() on any error other than -E_IPC_NOT_RECV.
 //
@@ -38,8 +56,20 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 void
 ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 {
-	// LAB 4: Your code here.
-	panic("ipc_send not implemented");
+  // LAB 4: Your code here.
+  int r;
+  do {
+    //cprintf("[%x]ipc_send\n", thisenv->env_id);
+    r = sys_ipc_try_send(to_env, val, pg ? pg : (void*)UTOP, perm);
+    if (r != 0 && r != -E_IPC_NOT_RECV) 
+      panic("%e", r);
+    /* 
+     * if (r == -E_IPC_NOT_RECV)
+     *   cprintf("[%x]ipc_send not received\n", thisenv->env_id);
+     * if (r == 0)
+     *   cprintf("[%x]ipc_send received\n", thisenv->env_id);
+     */
+  } while (r != 0);
 }
 
 // Find the first environment of the given type.  We'll use this to

@@ -73,6 +73,7 @@ KERN_BINFILES +=	user/idle \
 			user/forktree \
 			user/spin \
 			user/fairness \
+			user/pingpong1 \
 			user/pingpong \
 			user/pingpongs \
 			user/primes

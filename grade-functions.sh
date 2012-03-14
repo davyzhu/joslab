@@ -17,6 +17,7 @@ if gmake --version >/dev/null 2>&1; then make=gmake; else make=make; fi
 #
 
 timeout=30
+mytimeout=1
 preservefs=n
 qemu=`$make -s --no-print-directory print-qemu`
 gdbport=`$make -s --no-print-directory print-gdbport`
@@ -51,7 +52,7 @@ run () {
 	) >$out 2>$err &
 	PID=$!
 	# Wait for QEMU to start
-	sleep 2
+	sleep $mytimeout
 
 	if [ "$brkfn" ]; then
 		# Find the address of the kernel $brkfn function,

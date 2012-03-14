@@ -111,6 +111,7 @@ runtest1 spin \
 	".000010$E1. exiting gracefully" \
 	".000010$E1. free env 000010$E1"
 
+mytimeout=2
 qemuopts="$qemuopts -smp 2"
 
 runtest1 stresssched \
@@ -133,6 +134,7 @@ runtest1 pingpong \
 	".000010$E2. exiting gracefully" \
 	".000010$E2. free env 000010$E2" \
 
+mytimeout=30
 timeout=30
 runtest1 primes \
 	".00000000. new env 00001000" \
