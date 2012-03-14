@@ -21,25 +21,23 @@ static void boot_aps(void);
 void
 i386_init(void)
 {
-	extern char edata[], end[];
+  extern char edata[], end[];
 
-	// Before doing anything else, complete the ELF loading process.
-	// Clear the uninitialized global data (BSS) section of our program.
-	// This ensures that all static/global variables start out zero.
-	memset(edata, 0, end - edata);
+  // Before doing anything else, complete the ELF loading process.
+  // Clear the uninitialized global data (BSS) section of our program.
+  // This ensures that all static/global variables start out zero.
+  memset(edata, 0, end - edata);
 
-	// Initialize the console.
-	// Can't call cprintf until after we do this!
-	cons_init();
+  // Initialize the console.
+  // Can't call cprintf until after we do this!
+  cons_init();
 
-	cprintf("6828 decimal is %o octal!\n", 6828);
+  // Lab 2 memory management initialization functions
+  mem_init();
 
-	// Lab 2 memory management initialization functions
-	mem_init();
-
-	// Lab 3 user environment initialization functions
-	env_init();
-	trap_init();
+  // Lab 3 user environment initialization functions
+  env_init();
+  trap_init();
 
 	// Lab 4 multiprocessor initialization functions
 	mp_init();
@@ -50,7 +48,8 @@ i386_init(void)
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
-
+    lock_kernel();
+    
 	// Starting non-boot CPUs
 	boot_aps();
 
@@ -60,16 +59,32 @@ i386_init(void)
 		ENV_CREATE(user_idle, ENV_TYPE_IDLE);
 
 	// Start fs.
-	ENV_CREATE(fs_fs, ENV_TYPE_FS);
+	//ENV_CREATE(fs_fs, ENV_TYPE_FS);
 
 #if defined(TEST)
-	// Don't touch -- used by grading script!
-	ENV_CREATE(TEST, ENV_TYPE_USER);
+  // Don't touch -- used by grading script!
+  ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
+  ENV_CREATE(user_pingpong, ENV_TYPE_USER);
+  //ENV_CREATE(user_stresssched, ENV_TYPE_USER);
+  //ENV_CREATE(user_spin, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultread, ENV_TYPE_USER);
+  //ENV_CREATE(user_dumbfork, ENV_TYPE_USER);
+  //ENV_CREATE(user_cowfork, ENV_TYPE_USER);
+  //ENV_CREATE(user_forktree, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultregs, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultalloc, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultallocbad, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultnostack, ENV_TYPE_USER);
+  //ENV_CREATE(user_faultbadhandler, ENV_TYPE_USER);
+  
+  //for (i = 0; i < 2; i++)
+  //	ENV_CREATE(user_yield, ENV_TYPE_USER);
 	// Touch all you want.
 	// ENV_CREATE(user_writemotd, ENV_TYPE_USER);
 	// ENV_CREATE(user_testfile, ENV_TYPE_USER);
 	// ENV_CREATE(user_icode, ENV_TYPE_USER);
+	//ENV_CREATE(user_primes, ENV_TYPE_USER);
 #endif // TEST*
 
 	// Schedule and run the first user environment!
@@ -126,9 +141,11 @@ mp_main(void)
 	// only one CPU can enter the scheduler at a time!
 	//
 	// Your code here:
+    lock_kernel();
+    sched_yield();
 
 	// Remove this after you finish Exercise 4
-	for (;;);
+	//for (;;);
 }
 
 /*
@@ -144,14 +161,14 @@ const char *panicstr;
 void
 _panic(const char *file, int line, const char *fmt,...)
 {
-	va_list ap;
+  va_list ap;
 
-	if (panicstr)
-		goto dead;
-	panicstr = fmt;
+  if (panicstr)
+    goto dead;
+  panicstr = fmt;
 
-	// Be extra sure that the machine is in as reasonable state
-	__asm __volatile("cli; cld");
+  // Be extra sure that the machine is in as reasonable state
+  __asm __volatile("cli; cld");
 
 	va_start(ap, fmt);
 	cprintf("kernel panic on CPU %d at %s:%d: ", cpunum(), file, line);
@@ -159,21 +176,21 @@ _panic(const char *file, int line, const char *fmt,...)
 	cprintf("\n");
 	va_end(ap);
 
-dead:
-	/* break into the kernel monitor */
-	while (1)
-		monitor(NULL);
+ dead:
+  /* break into the kernel monitor */
+  while (1)
+    monitor(NULL);
 }
 
 /* like panic, but don't */
 void
 _warn(const char *file, int line, const char *fmt,...)
 {
-	va_list ap;
+  va_list ap;
 
-	va_start(ap, fmt);
-	cprintf("kernel warning at %s:%d: ", file, line);
-	vcprintf(fmt, ap);
-	cprintf("\n");
-	va_end(ap);
+  va_start(ap, fmt);
+  cprintf("kernel warning at %s:%d: ", file, line);
+  vcprintf(fmt, ap);
+  cprintf("\n");
+  va_end(ap);
 }

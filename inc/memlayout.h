@@ -162,7 +162,7 @@ typedef uint32_t pde_t;
  *
  * A second consequence is that the contents of the current page directory
  * will always be available at virtual address (VPT + (VPT >> PGSHIFT)), to
- * which vpd is set in entry.S.
+ * which vpd is set in entry.S. Don't understand yet.
  */
 extern volatile pte_t vpt[];     // VA of "virtual page table"
 extern volatile pde_t vpd[];     // VA of current page directory

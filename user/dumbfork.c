@@ -14,7 +14,7 @@ umain(int argc, char **argv)
 
 	// fork a child process
 	who = dumbfork();
-
+    dumbfork();
 	// print a message and yield to the other a few times
 	for (i = 0; i < (who ? 10 : 20); i++) {
 		cprintf("%d: I am the %s!\n", i, who ? "parent" : "child");
@@ -58,7 +58,9 @@ dumbfork(void)
 		// The copied value of the global variable 'thisenv'
 		// is no longer valid (it refers to the parent!).
 		// Fix it and return 0.
+      
 		thisenv = &envs[ENVX(sys_getenvid())];
+        //cprintf("Child env %x\n", thisenv->env_id);
 		return 0;
 	}
 

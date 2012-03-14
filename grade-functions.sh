@@ -17,6 +17,7 @@ if gmake --version >/dev/null 2>&1; then make=gmake; else make=make; fi
 #
 
 timeout=30
+mytimeout=1
 preservefs=n
 qemu=`$make -s --no-print-directory print-qemu`
 gdbport=`$make -s --no-print-directory print-gdbport`
@@ -37,8 +38,10 @@ run () {
 		qemuextra="-S -gdb tcp::$gdbport"
 	fi
 
-	qemucommand="$qemu -nographic $qemuopts -serial file:jos.out -monitor null -no-reboot $qemuextra"
-	if $verbose; then
+	# qemucommand="$qemu -nographic $qemuopts -serial file:jos.out -monitor null -no-reboot $qemuextra"
+  qemucommand="$qemu -nographic $qemuopts -serial file:jos.out -no-reboot"
+	echo $qemucommand
+  if $verbose; then
 		echo $qemucommand 1>&2
 	fi
 
@@ -48,9 +51,8 @@ run () {
 		exec $qemucommand
 	) >$out 2>$err &
 	PID=$!
-
 	# Wait for QEMU to start
-	sleep 1
+	sleep $mytimeout
 
 	if [ "$brkfn" ]; then
 		# Find the address of the kernel $brkfn function,
@@ -63,7 +65,9 @@ run () {
 			echo "br *0x$brkaddr"
 			echo c
 		) > jos.in
-		gdb -batch -nx -x jos.in > /dev/null 2>&1
+    
+    # comment this to save check time
+		# gdb -batch -nx -x jos.in > /dev/null 2>&1
 
 		# Make sure QEMU is dead.  On OS X, exiting gdb
 		# doesn't always exit QEMU.
@@ -160,7 +164,8 @@ runtest () {
 	# time to load.
 	if [ ! -s jos.out ]
 	then
-		sleep 4
+		# sleep 4
+      sleep 1
 	fi
 
 	if [ ! -s jos.out ]

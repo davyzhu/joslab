@@ -117,6 +117,21 @@ strfind(const char *s, char c)
 	return (char *) s;
 }
 
+uint32_t str2hex(const char *s) {
+  uint32_t hex=0,shift=0;
+  while(*s!='\0') s++;
+  while(*--s!='x') {
+    if ('0' <= *s && *s <= '9')
+      hex += (*s - '0') << shift;
+    if ('a' <= *s && *s <= 'f')
+      hex += ((*s - 'a') + 10) << shift;
+    if ('A' <= *s && *s <= 'F')
+      hex += ((*s - 'A') + 10) << shift;
+    shift += 4;
+  }
+  return hex;
+}
+
 #if ASM
 void *
 memset(void *v, int c, size_t n)

@@ -25,6 +25,7 @@ $(OBJDIR)/boot/main.o: boot/main.c
 
 $(OBJDIR)/boot/boot: $(BOOT_OBJS)
 	@echo + ld boot/boot
+# if change 0x7C00 to other value like 0x7c01, BIOS will not find bootloader
 	$(V)$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o $@.out $^
 	$(V)$(OBJDUMP) -S $@.out >$@.asm
 	$(V)$(OBJCOPY) -S -O binary -j .text $@.out $@
