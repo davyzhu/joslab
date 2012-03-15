@@ -52,8 +52,8 @@ bc_pgfault(struct UTrapframe *utf)
     void* va_beg = (void*)ROUNDDOWN((uint32_t)addr, BLKSIZE);
     if ((r = sys_page_alloc(0, va_beg, PTE_URW)) < 0)
       panic("sys_page_alloc: %e", r);
-    ide_read(, addr, BLKSECTS); // what's secno?
-    
+    ide_read(blockno*BLKSECTS, addr, BLKSECTS); // what's secno?
+    sys_page_map(0, va_beg, 0, va_beg, PTE_URW); //clear dirty
     
 	// Check that the block we read was allocated. (exercise for
 	// the reader: why do we do this *after* reading the block
@@ -78,9 +78,10 @@ flush_block(void *addr)
 		panic("flush_block of bad va %08x", addr);
 
 	// LAB 5: Your code here.
-    if (va_is_mapped() && va_is_dirty()) {
-      ide_write(, addr, BLKSECTS);
-      
+    void* va_beg = (void*)ROUNDDOWN((uint32_t)addr, BLKSIZE);
+    if (va_is_mapped(va_beg) && va_is_dirty(va_beg)) {
+      ide_write(blockno*BLKSECTS, addr, BLKSECTS);
+      sys_page_map(0, va_beg, 0, va_beg, PTE_URW); //clear dirty
     } 
 }
 

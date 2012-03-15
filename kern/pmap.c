@@ -605,6 +605,11 @@ page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm)
         } else if (perm & PTE_W) {
           *pte &= ~PTE_COW;
         }
+        // fix PTE_D, clear it when not in perm
+        if ((perm & PTE_D) == 0) {
+          *pte &= ~PTE_D;
+        }
+        
         *pte |= perm; // maybe wrong here, cannot clear a bit
         //pp->pp_ref++; //? and shall I change perm?
         return 0;
