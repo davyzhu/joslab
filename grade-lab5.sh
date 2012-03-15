@@ -9,6 +9,7 @@ $make
 qemuopts_orig="$qemuopts"
 qemuopts="$qemuopts -snapshot"
 
+mytimeout=2
 runtest1 -tag 'fs i/o [fs]' hello \
 	'FS can do I/O' \
 	! 'idle loop can do I/O' \
