@@ -12,7 +12,13 @@ umain(int argc, char **argv)
 	// Instead of busy-waiting like this,
 	// a better way would be to use the processor's HLT instruction
 	// to cause the processor to stop executing until the next interrupt -
-	// doing so allows the processor to conserve power more effectively.
+	// doing so allows the processor to conserve power more
+	// effectively.
+
+	//cprintf("enter idle \n");
+    //outw(0x8A00, 0x8A00);
+	//cprintf("idle loop can do I/O\n");
+
 	while (1) {
 		sys_yield();
 	}
