@@ -1,6 +1,8 @@
 #include <inc/lib.h>
 
 const char *msg = "This is the NEW message of the day!\n\n";
+//const char *msg = "This is the";
+
 
 #define FVA ((struct Fd*)0xCCCCC000)
 
@@ -79,10 +81,12 @@ umain(int argc, char **argv)
 	memset(buf, 0, sizeof buf);
 	if ((r = devfile.dev_read(FVA, buf, sizeof buf)) < 0)
 		panic("file_read after file_write: %e", r);
-	if (r != strlen(msg))
-		panic("file_read after file_write returned wrong length: %d", r);
+    // f_size is not correct
+    //cprintf("read r %d strlen(msg) %d strlen(buf) %d\n", r, strlen(msg), strlen(buf));
 	if (strcmp(buf, msg) != 0)
 		panic("file_read after file_write returned wrong data");
+	if (r != strlen(msg))
+		panic("file_read after file_write returned wrong length: %d", r);
 	cprintf("file_read after file_write is good\n");
 
 	// Now we'll try out open

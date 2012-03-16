@@ -367,7 +367,10 @@ file_read(struct File *f, void *buf, size_t count, off_t offset)
 		return 0;
 
 	count = MIN(count, f->f_size - offset);
-
+    /* 
+     * cprintf("file_read count %d f->f_size %d offset %d\n", 
+     *         count, f->f_size, offset);
+     */
 	for (pos = offset; pos < offset + count; ) {
 		if ((r = file_get_block(f, pos / BLKSIZE, &blk)) < 0)
 			return r;

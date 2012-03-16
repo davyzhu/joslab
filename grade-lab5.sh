@@ -43,9 +43,11 @@ runtest1 -tag 'lib/file.c [testfile]' testfile \
 	'file_close is good' \
 	'stale fileid is good' \
 
+
 quicktest 'file_read [testfile]' \
 	'file_read is good'
 
+mytimeout=4
 quicktest 'file_write [testfile]' \
 	'file_write is good'
 
