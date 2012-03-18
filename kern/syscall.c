@@ -148,8 +148,24 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 {
 	// LAB 5: Your code here.
 	// Remember to check whether the user has supplied us with a good
-	// address!
-	panic("sys_env_set_trapframe not implemented");
+	// address! 
+  struct Env * env;
+
+  // check ebp, esp
+  if (tf->tf_esp >= USTACKTOP || tf->tf_esp < USTACKTOP -PGSIZE)
+    panic("esp is not in the range of user stack\n");
+  if (tf->tf_regs.reg_ebp >= USTACKTOP || tf->tf_regs.reg_ebp < USTACKTOP -PGSIZE)
+    panic("ebp is not in the range of user stack\n");
+  if (tf->tf_eip >= USTACKTOP - PGSIZE || tf->tf_eip < UTEXT)
+    panic("eip is not in the range of user text\n");
+  
+  if (envid2env(envid, &env, 1) == 0) {
+    memmove(&(env->env_tf), tf, sizeof(struct Trapframe));
+  } else {
+    return -E_BAD_ENV;
+  }
+
+  return 0;
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -523,6 +539,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     break;
   case SYS_env_set_pgfault_upcall:
     return sys_env_set_pgfault_upcall(a1, (void*)a2);
+    break;
+  case SYS_env_set_trapframe:
+    return sys_env_set_trapframe(a1, (void*)a2);
     break;
   case SYS_ipc_try_send:
     return sys_ipc_try_send(a1, a2, (void*)a3, a4);
