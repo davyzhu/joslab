@@ -95,9 +95,15 @@ umain(int argc, char **argv)
 	else if (r >= 0)
 		panic("open /not-found succeeded!");
 
+    //cprintf("open(1) r %d\n", r);
 	if ((r = open("/newmotd", O_RDONLY)) < 0)
 		panic("open /newmotd: %e", r);
+    //cprintf("open(2) r %d\n", r);
 	fd = (struct Fd*) (0xD0000000 + r*PGSIZE);
+    /* 
+     * cprintf("fd %x fd_dev_id %x fd_offset %d fd_omode %x\n",
+     *         fd, fd->fd_dev_id, fd->fd_offset, fd->fd_omode);
+     */
 	if (fd->fd_dev_id != 'f' || fd->fd_offset != 0 || fd->fd_omode != O_RDONLY)
 		panic("open did not fill struct Fd correctly\n");
 	cprintf("open is good\n");
@@ -106,7 +112,8 @@ umain(int argc, char **argv)
 	if ((f = open("/big", O_WRONLY|O_CREAT)) < 0)
 		panic("creat /big: %e", f);
 	memset(buf, 0, sizeof(buf));
-	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+	//for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+	for (i = 0; i < BLKSIZE; i += sizeof(buf)) {
 		*(int*)buf = i;
 		if ((r = write(f, buf, sizeof(buf))) < 0)
 			panic("write /big@%d: %e", i, r);
@@ -115,8 +122,12 @@ umain(int argc, char **argv)
 
 	if ((f = open("/big", O_RDONLY)) < 0)
 		panic("open /big: %e", f);
-	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
-		*(int*)buf = i;
+    memset(buf, 0, sizeof(buf));
+    cprintf("p1\n");
+
+	//for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+	for (i = 0; i < BLKSIZE; i += sizeof(buf)) {
+        //*(int*)buf = i; // not correct ???
 		if ((r = readn(f, buf, sizeof(buf))) < 0)
 			panic("read /big@%d: %e", i, r);
 		if (r != sizeof(buf))

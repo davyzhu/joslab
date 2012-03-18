@@ -19,3 +19,7 @@ $ git checkout new_branch
 $ git merge old_branch
 
 Environment: Ubuntu, Emacs, gcc/gdb, qemu
+
+
+
+

@@ -12,6 +12,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 
+#define debug 0
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
 // Destroys the environment on memory errors.
@@ -437,6 +438,9 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
   dstenv->env_status = ENV_RUNNABLE;
   // shall I call sched_yield here?
 
+  if (debug && dstenv->env_ipc_value != 0 && 
+      dstenv->env_ipc_value != E_UNSPECIFIED)
+    cprintf("sys_ipc_try_send: %e\n", dstenv->env_ipc_value);
   return 0;
 
 }
@@ -460,8 +464,11 @@ sys_ipc_recv(void *dstva)
   if ((uint32_t)dstva < UTOP) {
     if ((uint32_t)dstva%PGSIZE==0)
       curenv->env_ipc_dstva = dstva;
-    else 
+    else {
+      if(debug)
+        cprintf("sys_ipc_recv: dstva%PGSIZE != 0\n");
       return -E_INVAL;
+    }
   }
 
   curenv->env_tf.tf_regs.reg_eax = 0; //recv return 0

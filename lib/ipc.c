@@ -19,6 +19,8 @@
 //   If 'pg' is null, pass sys_ipc_recv a value that it will understand
 //   as meaning "no page".  (Zero is not the right value, since that's
 //   a perfectly valid place to map a page.)
+#define debug 0
+
 int32_t
 ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
@@ -38,6 +40,9 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 
   if (perm_store)
     *perm_store = (r==0 && (uint32_t)pg<UTOP) ? thisenv->env_ipc_perm : 0;
+
+  if (debug && r != 0 && r != E_UNSPECIFIED)
+    cprintf("ipc_recv r %e\n", r);
 
   if (r == 0)
     return thisenv->env_ipc_value; 
@@ -69,6 +74,9 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
      * if (r == 0)
      *   cprintf("[%x]ipc_send received\n", thisenv->env_id);
      */
+    //cprintf("ipc_send val %e\n", val);
+    if (debug && val != 0 && val != E_UNSPECIFIED)
+      cprintf("ipc_send val %e\n", val);
   } while (r != 0);
 }
 
