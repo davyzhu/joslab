@@ -1,6 +1,8 @@
 #include <inc/lib.h>
 
 const char *msg = "This is the NEW message of the day!\n\n";
+//const char *msg = "This is the";
+
 
 #define FVA ((struct Fd*)0xCCCCC000)
 
@@ -79,10 +81,12 @@ umain(int argc, char **argv)
 	memset(buf, 0, sizeof buf);
 	if ((r = devfile.dev_read(FVA, buf, sizeof buf)) < 0)
 		panic("file_read after file_write: %e", r);
-	if (r != strlen(msg))
-		panic("file_read after file_write returned wrong length: %d", r);
+    // f_size is not correct
+    //cprintf("read r %d strlen(msg) %d strlen(buf) %d\n", r, strlen(msg), strlen(buf));
 	if (strcmp(buf, msg) != 0)
 		panic("file_read after file_write returned wrong data");
+	if (r != strlen(msg))
+		panic("file_read after file_write returned wrong length: %d", r);
 	cprintf("file_read after file_write is good\n");
 
 	// Now we'll try out open
@@ -91,9 +95,15 @@ umain(int argc, char **argv)
 	else if (r >= 0)
 		panic("open /not-found succeeded!");
 
+    //cprintf("open(1) r %d\n", r);
 	if ((r = open("/newmotd", O_RDONLY)) < 0)
 		panic("open /newmotd: %e", r);
+    //cprintf("open(2) r %d\n", r);
 	fd = (struct Fd*) (0xD0000000 + r*PGSIZE);
+    /* 
+     * cprintf("fd %x fd_dev_id %x fd_offset %d fd_omode %x\n",
+     *         fd, fd->fd_dev_id, fd->fd_offset, fd->fd_omode);
+     */
 	if (fd->fd_dev_id != 'f' || fd->fd_offset != 0 || fd->fd_omode != O_RDONLY)
 		panic("open did not fill struct Fd correctly\n");
 	cprintf("open is good\n");
@@ -103,6 +113,7 @@ umain(int argc, char **argv)
 		panic("creat /big: %e", f);
 	memset(buf, 0, sizeof(buf));
 	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+      //for (i = 0; i < BLKSIZE; i += sizeof(buf)) {
 		*(int*)buf = i;
 		if ((r = write(f, buf, sizeof(buf))) < 0)
 			panic("write /big@%d: %e", i, r);
@@ -111,8 +122,12 @@ umain(int argc, char **argv)
 
 	if ((f = open("/big", O_RDONLY)) < 0)
 		panic("open /big: %e", f);
+    memset(buf, 0, sizeof(buf));
+    cprintf("p1\n");
+
 	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
-		*(int*)buf = i;
+	//for (i = 0; i < BLKSIZE; i += sizeof(buf)) {
+        //*(int*)buf = i; // not correct ???
 		if ((r = readn(f, buf, sizeof(buf))) < 0)
 			panic("read /big@%d: %e", i, r);
 		if (r != sizeof(buf))

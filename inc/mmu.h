@@ -64,6 +64,10 @@
 #define PTE_D		0x040	// Dirty
 #define PTE_PS		0x080	// Page Size
 #define PTE_G		0x100	// Global
+#define PTE_COW     0x800
+
+#define PTE_URO (PTE_P | PTE_U)
+#define PTE_URW (PTE_P | PTE_W | PTE_U)
 
 // The PTE_AVAIL bits aren't used by the kernel or interpreted by the
 // hardware, so user processes are allowed to set them arbitrarily.

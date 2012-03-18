@@ -21,6 +21,8 @@
 //    corresponds to a Unix file descriptor.  This 'struct Fd' is kept
 //    on *its own page* in memory, and it is shared with any
 //    environments that have the file open.
+// How to share?
+
 // 3. 'struct OpenFile' links these other two structures, and is kept
 //    private to the file server.  The server maintains an array of
 //    all open files, indexed by "file ID".  (There can be at most
@@ -64,23 +66,26 @@ serve_init(void)
 int
 openfile_alloc(struct OpenFile **o)
 {
-	int i, r;
-
-	// Find an available open-file table entry
-	for (i = 0; i < MAXOPEN; i++) {
-		switch (pageref(opentab[i].o_fd)) {
-		case 0:
-			if ((r = sys_page_alloc(0, opentab[i].o_fd, PTE_P|PTE_U|PTE_W)) < 0)
-				return r;
-			/* fall through */
-		case 1:
-			opentab[i].o_fileid += MAXOPEN;
-			*o = &opentab[i];
-			memset(opentab[i].o_fd, 0, PGSIZE);
-			return (*o)->o_fileid;
-		}
-	}
-	return -E_MAX_OPEN;
+  int i, r;
+  
+  // Find an available open-file table entry
+  for (i = 0; i < MAXOPEN; i++) {
+    // pageref return pg.pp_ref
+    switch (pageref(opentab[i].o_fd)) {
+      // the fd page is not created 
+    case 0:
+      if ((r = sys_page_alloc(0, opentab[i].o_fd, PTE_P|PTE_U|PTE_W)) < 0)
+        return r;
+      /* fall through */
+      // now it's created
+    case 1:
+      opentab[i].o_fileid += MAXOPEN; // what's that mean?
+      *o = &opentab[i];
+      memset(opentab[i].o_fd, 0, PGSIZE); //fd page is cleared to zero
+      return (*o)->o_fileid;
+    }
+  }
+  return -E_MAX_OPEN;
 }
 
 // Look up an open file for envid.
@@ -89,7 +94,7 @@ openfile_lookup(envid_t envid, uint32_t fileid, struct OpenFile **po)
 {
 	struct OpenFile *o;
 
-	o = &opentab[fileid % MAXOPEN];
+	o = &opentab[fileid % MAXOPEN]; 
 	if (pageref(o->o_fd) == 1 || o->o_fileid != fileid)
 		return -E_INVAL;
 	*po = o;
@@ -119,7 +124,7 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 	// Find an open file ID
 	if ((r = openfile_alloc(&o)) < 0) {
 		if (debug)
-			cprintf("openfile_alloc failed: %e", r);
+			cprintf("openfile_alloc failed: %e\n", r);
 		return r;
 	}
 	fileid = r;
@@ -130,14 +135,14 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 			if (!(req->req_omode & O_EXCL) && r == -E_FILE_EXISTS)
 				goto try_open;
 			if (debug)
-				cprintf("file_create failed: %e", r);
+				cprintf("file_create failed: %e\n", r);
 			return r;
 		}
 	} else {
 try_open:
 		if ((r = file_open(path, &f)) < 0) {
 			if (debug)
-				cprintf("file_open failed: %e", r);
+				cprintf("file_open failed: %e\n", r);
 			return r;
 		}
 	}
@@ -146,7 +151,7 @@ try_open:
 	if (req->req_omode & O_TRUNC) {
 		if ((r = file_set_size(f, 0)) < 0) {
 			if (debug)
-				cprintf("file_set_size failed: %e", r);
+				cprintf("file_set_size failed: %e\n", r);
 			return r;
 		}
 	}
@@ -160,9 +165,9 @@ try_open:
 	o->o_fd->fd_dev_id = devfile.dev_id;
 	o->o_mode = req->req_omode;
 
-	if (debug)
+	if (debug) {
 		cprintf("sending success, page %08x\n", (uintptr_t) o->o_fd);
-
+    }
 	// Share the FD page with the caller
 	*pg_store = o->o_fd;
 	*perm_store = PTE_P|PTE_U|PTE_W;
@@ -202,6 +207,8 @@ serve_read(envid_t envid, union Fsipc *ipc)
 {
 	struct Fsreq_read *req = &ipc->read;
 	struct Fsret_read *ret = &ipc->readRet;
+    int n=0, r=0;
+    struct OpenFile *o;
 
 	if (debug)
 		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
@@ -215,7 +222,18 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	// Hint: Use file_read.
 	// Hint: The seek position is stored in the struct Fd.
 	// LAB 5: Your code here
-	panic("serve_read not implemented");
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+		return r;
+    
+    n = (req->req_n > PGSIZE) ? PGSIZE : req->req_n;
+    // from fileid to File
+    
+    r = file_read(o->o_file, ret->ret_buf, n, o->o_fd->fd_offset);
+    if (r >= 0) o->o_fd->fd_offset += r;
+    
+    //cprintf("file_read r %d ret_buf_len %d\n",r, strlen(ret->ret_buf));
+    
+    return r;  
 }
 
 // Write req->req_n bytes from req->req_buf to req_fileid, starting at
@@ -225,11 +243,25 @@ serve_read(envid_t envid, union Fsipc *ipc)
 int
 serve_write(envid_t envid, struct Fsreq_write *req)
 {
+  int r, size;
+    struct OpenFile *o;
+
 	if (debug)
 		cprintf("serve_write %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
 
 	// LAB 5: Your code here.
-	panic("serve_write not implemented");
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+		return r;
+    // what's the new size? (offset point to the next unwritten position)
+    size = o->o_fd->fd_offset + req->req_n;
+    if (size > o->o_file->f_size)
+      file_set_size(o->o_file, size);
+    r = file_write(o->o_file, req->req_buf, req->req_n, o->o_fd->fd_offset);
+    //cprintf("serve_write f_size %d\n", o->o_file->f_size);
+    if (r >= 0 ) 
+      o->o_fd->fd_offset += r;
+
+    return r;  
 }
 
 // Stat ipc->stat.req_fileid.  Return the file's struct Stat to the
@@ -344,7 +376,7 @@ serve(void)
 			cprintf("Invalid request code %d from %08x\n", whom, req);
 			r = -E_INVAL;
 		}
-		ipc_send(whom, r, pg, perm);
+		ipc_send(whom, r, pg, perm); // share pg and perm in open with caller
 		sys_page_unmap(0, fsreq);
 	}
 }

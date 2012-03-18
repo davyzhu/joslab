@@ -1,0 +1,25 @@
+2011 fall, MIT 6.828 Operating system
+
+Status:
+| Lab | Exercise | Challenge         | Days |
+|-----+----------+-------------------+------|
+|   1 | all pass |                   |    2 |
+|   2 | all pass | monitor functions |    5 |
+|   3 | all pass |                   |    5 |
+|   4 | all pass |                   |   10 |
+|   5 |          |                   |      |
+|   6 |          |                   |      |
+|   7 |          |                   |      |
+
+Git workflow:
+$ git add -p
+$ git commit -m "Pass Ex1.1"
+$ git push -u github lab2
+$ git checkout new_branch
+$ git merge old_branch
+
+Environment: Ubuntu, Emacs, gcc/gdb, qemu
+
+
+
+

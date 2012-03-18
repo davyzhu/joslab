@@ -59,6 +59,9 @@ entry:
 	# Turn on paging.
 	movl	%cr0, %eax
 	orl	$(CR0_PE|CR0_PG|CR0_WP), %eax
+    # after next instruction, virtual address 0xF0100000
+    # is mapped to physical address 0x00100000, so we can
+    # see same content at these two address.
 	movl	%eax, %cr0
 
 	# Now paging is enabled, but we're still running at a low EIP
