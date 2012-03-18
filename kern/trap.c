@@ -214,6 +214,7 @@ trap_dispatch(struct Trapframe *tf)
 
   case (IRQ_OFFSET + IRQ_TIMER):
     //cprintf("irq 0\n");
+    time_tick();
     lapic_eoi();
     sched_yield();
 
