@@ -4,14 +4,17 @@
 #include <kern/pci.h>
 #include <kern/pcireg.h>
 #include <kern/e1000.h>
+#include <kern/pmap.h>
 
 // Flag to do "lspci" at bootup
 static int pci_show_devs = 1;
-static int pci_show_addrs = 0;
+static int pci_show_addrs = 1;
 
 // PCI "configuration mechanism one"
 static uint32_t pci_conf1_addr_ioport = 0x0cf8;
 static uint32_t pci_conf1_data_ioport = 0x0cfc;
+
+volatile uint32_t *pci_ns; //MMIO VA of PCI
 
 // Forward declarations
 static int pci_bridge_attach(struct pci_func *pcif);
@@ -36,6 +39,18 @@ struct pci_driver pci_attach_vendor[] = {
 
 static int pci_attach_fun(struct pci_func *pcif) {
   pci_func_enable(pcif);
+  // map base address register to VA in kern_pgdir
+  boot_map_region(kern_pgdir,
+                  KPCI,
+                  ROUNDUP(pcif->reg_size[0], PGSIZE),
+                  ROUNDUP(pcif->reg_base[0], PGSIZE),
+                  (PTE_P | PTE_W | PTE_PCD| PTE_PWT)
+                  );
+  uint32_t reg_status_addr = KPCI + E1000_STATUS;
+  if (*(uint32_t*)reg_status_addr != 0x80080783) {
+    panic("reg addr 0x%x value 0x%x\n", 
+          reg_status_addr, *(uint32_t*)reg_status_addr);
+  }
   return 0;
 }
 
@@ -83,7 +98,7 @@ pci_attach_match(uint32_t key1, uint32_t key2,
 				return r;
 			if (r < 0)
 				cprintf("pci_attach_match: attaching "
-					"%x.%x (%p): e\n",
+					"%x.%x (%p): %e\n",
 					key1, key2, list[i].attachfn, r);
 		}
 	}
@@ -224,13 +239,13 @@ pci_func_enable(struct pci_func *f)
 			size = PCI_MAPREG_MEM_SIZE(rv);
 			base = PCI_MAPREG_MEM_ADDR(oldv);
 			if (pci_show_addrs)
-				cprintf("  mem region %d: %d bytes at 0x%x\n",
+				cprintf("  mem region(reg[%d]): 0x%x bytes at 0x%x\n",
 					regnum, size, base);
 		} else {
 			size = PCI_MAPREG_IO_SIZE(rv);
 			base = PCI_MAPREG_IO_ADDR(oldv);
 			if (pci_show_addrs)
-				cprintf("  io region %d: %d bytes at 0x%x\n",
+				cprintf("  io region(reg[%d]): 0x%x bytes at 0x%x\n",
 					regnum, size, base);
 		}
 

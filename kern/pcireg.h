@@ -42,9 +42,14 @@
 
 #include <inc/types.h>
 
+// register definition copy from e1000_hw.h
+#define E1000_STATUS   0x00008  /* Device Status - RO */
+
+
 /*
  * Device identification register; contains a vendor ID and a device ID.
  */
+
 #define	PCI_ID_REG			0x00
 
 typedef uint16_t pci_vendor_id_t;

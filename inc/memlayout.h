@@ -101,6 +101,9 @@
 #define KSTKGAP		(8*PGSIZE)   		// size of a kernel stack guard
 #define ULIM		(KSTACKTOP - PTSIZE) 
 
+// Kernel PCI space
+#define KPCI (KSTACKTOP + PGSIZE) 
+
 /*
  * User read-only mappings! Anything below here til UTOP are readonly to user.
  * They are global pages mapped in at env allocation time.
