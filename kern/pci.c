@@ -6,6 +6,11 @@
 #include <kern/e1000.h>
 #include <kern/pmap.h>
 
+#define debug 1
+volatile uint32_t *pci;
+struct tx_desc *pci_tdlist;
+uint32_t *pci_pbuf;
+
 // Flag to do "lspci" at bootup
 static int pci_show_devs = 1;
 static int pci_show_addrs = 1;
@@ -14,7 +19,6 @@ static int pci_show_addrs = 1;
 static uint32_t pci_conf1_addr_ioport = 0x0cf8;
 static uint32_t pci_conf1_data_ioport = 0x0cfc;
 
-volatile uint32_t *pci_ns; //MMIO VA of PCI
 
 // Forward declarations
 static int pci_bridge_attach(struct pci_func *pcif);
@@ -41,18 +45,110 @@ static int pci_attach_fun(struct pci_func *pcif) {
   pci_func_enable(pcif);
   // map base address register to VA in kern_pgdir
   boot_map_region(kern_pgdir,
-                  KPCI,
+                  KPCI_MMIO,
                   ROUNDUP(pcif->reg_size[0], PGSIZE),
-                  ROUNDUP(pcif->reg_base[0], PGSIZE),
+                  ROUNDDOWN(pcif->reg_base[0], PGSIZE),
                   (PTE_P | PTE_W | PTE_PCD| PTE_PWT)
                   );
-  uint32_t reg_status_addr = KPCI + E1000_STATUS;
-  if (*(uint32_t*)reg_status_addr != 0x80080783) {
-    panic("reg addr 0x%x value 0x%x\n", 
-          reg_status_addr, *(uint32_t*)reg_status_addr);
+
+  pci = (uint32_t*)KPCI_MMIO;
+  pci_tdlist = (struct tx_desc*)(KPCI_MMIO + ROUNDUP(pcif->reg_size[0], PGSIZE));
+  pci_pbuf = (uint32_t*)((uint32_t)pci_tdlist + ROUNDUP(TX_DESC_LEN, PGSIZE));
+  
+  if(debug)
+    cprintf("pci 0x%x pci_tdlist 0x%x pci_pb 0x%x\n",
+            (uint32_t)pci, (uint32_t)pci_tdlist, (uint32_t)pci_pbuf);
+
+  // Ex6.4 test
+  //uint32_t reg_status_addr = pci[E1000_STATUS];
+  //cprintf("reg_status_addr 0x%x\n", reg_status_addr);
+  if (pci[E1000_STATUS] != 0x80080783) {
+    panic("reg status 0x%x\n", pci[E1000_STATUS]);
+  }
+  
+  // transmit init: 8254x spec 14.5
+  // address in transmit descriptor lists and regs should be 
+  // physical address.
+  struct Page *pg;
+  int i, r;
+  // allocate memory for transmit descriptor list
+  if((pg = page_alloc(ALLOC_ZERO)) == NULL)
+    panic("out of memory");
+  if ((r = page_insert(kern_pgdir, pg, pci_tdlist, PTE_KRW)) != 0)
+    panic("cannot insert page");
+  // set TDBAL
+  pci[E1000_TDBAL] = page2pa(pg);
+  // set TDLEN
+  pci[E1000_TDLEN] = TX_DESC_LEN;
+
+  cprintf("TDBAL 0x%x, TDLEN 0x%x\n", pci[E1000_TDBAL], pci[E1000_TDLEN]);
+
+  // allocate memory for packet buffer
+  void *pci_pbuf_i = (void*)pci_pbuf;
+  for (i=0; i<N_TX_DESC; i++) {
+  //for (i=0; i<2; i++) {
+    if((pg = page_alloc(ALLOC_ZERO)) == NULL)
+      panic("out of memory");
+    if ((r = page_insert(kern_pgdir, pg, pci_pbuf_i, PTE_KRW)) != 0)
+      panic("cannot insert page");
+    // assign pa of packet buffer to descriptor address
+    pci_tdlist[i].addr.fields.low = page2pa(pg);
+    /* cprintf("pg @pa 0x%x\n", page2pa(pg)); */
+    pci_tdlist[i].lower.flags.length = 0x100; // length
+    pci_tdlist[i].lower.data |= E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP; 
+    pci_tdlist[i].upper.data |= E1000_TXD_STAT_DD;
+    pci_pbuf_i += PGSIZE;
+    /* 
+     * cprintf("VA DATA: addr @0x%x 0x%x, len @0x%x 0x%x, status @0x%x 0x%x\n",
+     *         &pci_tdlist[4*i], pci_tdlist[4*i], 
+     *         &pci_tdlist[4*i+2], pci_tdlist[4*i+2],
+     *         &pci_tdlist[4*i+3], pci_tdlist[4*i+3]);
+     */
+  }
+  
+  // clear TDH and TDT
+  pci[E1000_TDH] = 0;
+  pci[E1000_TDT] = 0;
+  
+  // FD is full duplex
+  // set TCTL
+  pci[E1000_TCTL] = E1000_TCTL_EN | E1000_TCTL_PSP | 
+    E1000_TCTL_CT_ETH | E1000_TCTL_COLD_FD;
+
+  // set TIPG (spec 13.4.34, IEEE802.3)
+  // IPGR2 = 6(0000000110), IPGR1 = 8(0000001000), IPGT = 10(0000001010), 
+  pci[E1000_TIPG] = E1000_TIPG_FD;
+
+  return 0;
+}
+
+int pci_send_pkt(void* srcva, size_t len) {
+  int tdt = pci[E1000_TDT];
+
+  // check DD bit to make sure packets have been transported
+  while((pci_tdlist[tdt].upper.data & E1000_TXD_STAT_DD) == 0)
+    ;
+
+  void* dstva = (void*)((uint32_t)pci_pbuf + tdt*PGSIZE);  
+  memmove(dstva, srcva, len);
+  if (pci_tdlist[tdt].upper.data & E1000_TXD_STAT_DD) {
+    pci_tdlist[tdt].lower.flags.length = len;    
+    pci[E1000_TDT] = 
+      (tdt == N_TX_DESC - 1) ? 0 : tdt + 1; // tdt should be only used
+                                            // by one process at one time
   }
   return 0;
 }
+
+/* 
+ * int pci_send_pkts() {
+ *   int i;
+ *   for (i=0; i<35; i++)
+ *     //cprintf("send pkt %d\n", i);
+ *     pci_send_pkt(i);
+ *   return 0;
+ * }
+ */
 
 static void
 pci_conf1_set_addr(uint32_t bus,
@@ -267,11 +363,15 @@ pci_func_enable(struct pci_func *f)
 		PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id));
 }
 
+
 int
 pci_init(void)
 {
 	static struct pci_bus root_bus;
-	memset(&root_bus, 0, sizeof(root_bus));
+	int r;
+  memset(&root_bus, 0, sizeof(root_bus));
 
-	return pci_scan_bus(&root_bus);
+  r = pci_scan_bus(&root_bus);
+  //pci_send_pkts();
+  return r;
 }

@@ -96,6 +96,7 @@ KERN_BINFILES +=	user/testtime \
 			user/httpd \
 			user/echosrv \
 			user/echotest \
+			net/testsend \
 			net/testoutput \
 			net/testinput \
 			net/ns

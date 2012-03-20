@@ -123,3 +123,9 @@ sys_time_msec(void)
 {
 	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
 }
+
+int
+sys_pci_send_pkt(envid_t envid, void *pktva, size_t len)
+{
+  return (unsigned int) syscall(SYS_pci_send_pkt, 1, envid, (uint32_t)pktva, len, 0, 0);
+}

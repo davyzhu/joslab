@@ -43,7 +43,29 @@
 #include <inc/types.h>
 
 // register definition copy from e1000_hw.h
-#define E1000_STATUS   0x00008  /* Device Status - RO */
+#define E1000_STATUS   (0x00008/4)  /* Device Status - RO */
+#define E1000_TCTL     (0x00400/4)  /* TX Control - RW */
+#define E1000_TDBAL    (0x03800/4)  /* TX Descriptor Base Address Low - RW */
+#define E1000_TDLEN    (0x03808/4)  /* TX Descriptor Length - RW */
+#define E1000_TDH      (0x03810/4)  /* TX Descriptor Head - RW */
+#define E1000_TDT      (0x03818/4)  /* TX Descripotr Tail - RW */
+#define E1000_TIPG     (0x00410/4)  /* TX Inter-packet gap -RW */
+
+
+#define E1000_TIPG_IPGR2 6
+#define E1000_TIPG_IPGR1 8
+#define E1000_TIPG_IPGT 10
+#define E1000_TIPG_FD ((E1000_TIPG_IPGR2<<20) + (E1000_TIPG_IPGR1<<10) + E1000_TIPG_IPGT)
+#define E1000_TCTL_EN     0x00000002    /* enable tx */
+#define E1000_TCTL_PSP    0x00000008    /* pad short packets */
+#define E1000_TCTL_COLD   0x003ff000    /* collision distance */
+#define E1000_TCTL_CT     0x00000ff0    /* collision threshold */
+#define E1000_TCTL_CT_ETH     0x00000100    /* collision threshold, Ethernet 10h*/
+#define E1000_TCTL_COLD_FD   0x00040000 /* collision distance full duplex 40h */
+#define E1000_TXD_CMD_EOP    0x01000000 /* End of Packet */
+#define E1000_TXD_CMD_RS     0x08000000 /* Report Status */
+#define E1000_TXD_CMD_RPS    0x10000000 /* Report Packet Sent */
+#define E1000_TXD_STAT_DD    0x00000001 /* Descriptor Done */
 
 
 /*

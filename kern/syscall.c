@@ -12,6 +12,8 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
+#include <kern/pci.h>
+
 
 #define debug 0
 // Print a string to the system console.
@@ -506,6 +508,48 @@ sys_time_msec(void)
   return time_msec();
 }
 
+// return what?
+// will pktva cross a page?
+static int
+sys_pci_send_pkt(envid_t envid, void *pktva, size_t len)
+{
+  struct Env *srcenv;
+  struct Page * pg;
+  pte_t *srcpte;
+  int r;
+
+  if (envid2env(envid, &srcenv, 0) != 0) {
+    panic("bad envid");
+    return -E_BAD_ENV;    
+  }
+
+  if ((uint32_t)pktva >= UTOP) {
+    panic("bad pktva");
+    return -E_INVAL;
+  }
+  
+  if ((uint32_t)pktva/PGSIZE != ((uint32_t)pktva+len)/PGSIZE){
+    panic("packet cross page");
+  }  
+  
+  // copy packet from user to kernel
+  // map user page to kernel 
+  if((pg = page_lookup(srcenv->env_pgdir, ROUNDDOWN(pktva,PGSIZE), &srcpte)) == NULL) {
+    cprintf("sys_page_map: E_INVAl case 3\n");
+    return -E_INVAL;
+  }
+
+  if ((r = page_insert(kern_pgdir, pg, (void*)KPCI_USER_PG, PTE_P)) != 0) {
+    return -E_NO_MEM;
+  }
+
+  pci_send_pkt((void*)(KPCI_USER_PG+((uint32_t)pktva%PGSIZE)), len);
+
+  page_remove(kern_pgdir, (void*)KPCI_USER_PG);
+  return 0;
+}
+
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -558,6 +602,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     return sys_ipc_recv((void*)a1);
   case SYS_time_msec:
     return sys_time_msec();
+  case SYS_pci_send_pkt:
+    return sys_pci_send_pkt(a1, (void*)a2, a3);
   default:
     cprintf("Error syscall:\n");
     break;

@@ -148,7 +148,7 @@ PORT80	:= $(shell expr $(GDBPORT) + 2)
 
 QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)
 
-QEMUEXTRA=-d int
+#QEMUEXTRA=-d int
 #QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT) -D qemu.log
 #QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial file:jos.out -no-reboot
 QEMUOPTS += $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)

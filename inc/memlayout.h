@@ -102,7 +102,8 @@
 #define ULIM		(KSTACKTOP - PTSIZE) 
 
 // Kernel PCI space
-#define KPCI (KSTACKTOP + PGSIZE) 
+#define KPCI_USER_PG (KSTACKTOP + PGSIZE)
+#define KPCI_MMIO (KSTACKTOP + PGSIZE*3) 
 
 /*
  * User read-only mappings! Anything below here til UTOP are readonly to user.

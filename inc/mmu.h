@@ -68,6 +68,7 @@
 
 #define PTE_URO (PTE_P | PTE_U)
 #define PTE_URW (PTE_P | PTE_W | PTE_U)
+#define PTE_KRW (PTE_P | PTE_W)
 
 // The PTE_AVAIL bits aren't used by the kernel or interpreted by the
 // hardware, so user processes are allowed to set them arbitrarily.
